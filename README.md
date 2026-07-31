@@ -1,4 +1,4 @@
-# wcag-accessibility
+# wcag-skill
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue)](SKILL.md)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
