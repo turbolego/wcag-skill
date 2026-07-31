@@ -131,7 +131,7 @@ Prioritize by severity and by how many nodes are affected:
    - `FAIL — Fix the errors` → fix index.html/style.css, rerun, repeat (max 20 iterations).
 5. Log every iteration (scores, error counts, reasoning) in `benchmark_log.md`.
 6. Reports: `test_results.json` (summary), `w3c_report.json`, `axe_report.json`,
-   `html5_tags_report.json` + `resources/html_tags.json` (113 expected tags).
+   `html5_tags_report.json` + `resources/html_tags.json` (107 expected tags).
 
 ## Pitfalls (hard-won)
 1. **`<base href>` silently breaks relative CSS/JS URLs.** When a page has
@@ -161,6 +161,25 @@ Prioritize by severity and by how many nodes are affected:
    `<main>` plus header/footer/nav landmarks.
 10. **Screenshots lie about accessibility.** Visual "fixes" (larger fonts, colors) without
     semantic markup don't move validator scores. Fix the DOM, not the pixels.
+11. **`test-suite.sh` starts its own HTTP server** on port 28763 (`A11Y_SERVE_PORT`) per
+    run — do NOT start one manually for the suite. Between runs the server is down, so
+    `curl` to a CSS path returns exit 7 (connection refused) = "server not running", NOT a
+    broken path. The local tag-coverage pre-check (`check_html5_tags.py`) needs no server
+    at all.
+12. **Starting from the bare setup.sh starter is wasteful.** The starter page has 107
+    missing tags and 2 axe violations (no `<main>`, h1 outside landmarks) → always ≥1
+    wasted iteration. Copy a known-good page and replace placeholders instead (see the
+    Fast-path template section), reducing passes to 1-2 iterations.
+
+## Fast-path template (skip the wasted first iteration)
+When running the AI-WCAG-Gauntlet benchmark loop, skip setup.sh's bare starter page:
+1. Copy `templates/index.html` → `<run_folder>/index.html`, `templates/style.css` → `<run_folder>/style.css`, and `templates/dummy.js` → `<run_folder>/scripts/dummy.js` (create the scripts/ dir).
+2. Replace the 3 placeholders in index.html:
+   - `__MODEL_NAME__` → display name (e.g. `DeepSeek V4 Pro`)
+   - `__MODEL_NAME_ENC__` → URL-encoded (e.g. `DeepSeek%20V4%20Pro`)
+   - `__RUN_FOLDER__` → the run folder name (e.g. `DeepSeek V4 Pro-20260731-145624`)
+3. Local pre-check (no server needed): `python3 resources/check_html5_tags.py "<run_folder>/index.html" | tail -5` → expect "All HTML5 tags are used at least once".
+4. `bash test-suite.sh "<run_folder>"` → expect `STATUS: PASS` with SCORE 191.80 on the first or second run.
 
 ## Verification
 - Fast pre-check (tag coverage + balance) before the full audit:
@@ -170,9 +189,10 @@ Prioritize by severity and by how many nodes are affected:
   validator counts as done.
 
 ## Support files
+- `templates/index.html` + `templates/style.css` + `templates/dummy.js` — known-good full benchmark page (all 107 WHATWG tags, landmark structure, 24px touch targets). Copy into a run folder and replace `__MODEL_NAME__` / `__MODEL_NAME_ENC__` / `__RUN_FOLDER__` (see Fast-path template section). Passes all 5 validators, SCORE 191.80.
 - `scripts/check-tag-coverage.py` — HTML5 tag coverage + tag-balance checker.
 - `references/ai-wcag-gauntlet-iteration-log.md` — exact error strings and fix history
-  from a passing 6-iteration benchmark run (deepseek-v4-pro via nvidia, label "Hermes").
+  from passing benchmark runs (deepseek-v4-pro via nvidia, label "Hermes": run 1 — 6 iterations; run 2 — 2 iterations via fast-path template, SCORE 191.80).
 
 ## User preferences
 - Editing config variable sections (setup.sh etc.): comment out the old value, add a new
