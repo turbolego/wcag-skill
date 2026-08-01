@@ -1,5 +1,5 @@
 ---
-name: wcag-accessibility
+name: wcag-skill
 description: "Detect, fix, and prevent WCAG 2.2 violations in web pages. Use when: (1) auditing for accessibility, (2) fixing axe/pa11y/W3C/QualWeb failures, (3) writing accessible HTML/CSS, (4) running the AI-WCAG-Gauntlet benchmark loop."
 version: 1.1.0
 metadata:

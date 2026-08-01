@@ -1,9 +1,9 @@
 # AI-WCAG-Gauntlet Iteration Log — DeepSeek V4 Pro (passing run, 6 iterations)
 
 Reference for error strings, score progression, and fix history. Repo:
-`turbolego/AI-WCAG-Gauntlet` (private; clone with `git clone` using `~/.git-credentials`,
-`gh` CLI may be unauthenticated). Model under test: `deepseek-ai/deepseek-v4-pro` via
-nvidia provider, label "Hermes".
+`turbolego/AI-WCAG-Gauntlet` (private; clone with `gh repo clone turbolego/AI-WCAG-Gauntlet`
+or another scoped auth method — do not reference local credential files).
+Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Hermes".
 
 ## Score progression
 | Iter | Score  | HTML_TAG | W3C | AXE | Note |

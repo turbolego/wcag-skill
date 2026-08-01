@@ -21,13 +21,13 @@ HTML/CSS, verify, and write accessible markup from the start.
 
 ```bash
 # From ClawHub
-openclaw skills install turbolego/wcag-accessibility
+openclaw skills install turbolego/wcag-skill
 
 # From GitHub
 openclaw skills install git:turbolego/wcag-skill@main
 
 # Local
-openclaw skills install ./path/to/wcag-skill --as wcag-accessibility
+openclaw skills install ./path/to/wcag-skill --as wcag-skill
 ```
 
 ## Who this is for
