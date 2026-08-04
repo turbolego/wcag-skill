@@ -1,0 +1,71 @@
+name: Publish to ClawHub (Web Upload)
+
+# Fallback publisher that uses the multipart web-upload API path.
+# The CLI ticket-upload path is blocked by a server-side clock-domain
+# bug (openclaw/clawhub#3397, PR #3400). This workflow bypasses it
+# while the PR is pending.
+#
+# Once merged, you can switch back to the reusable workflow:
+#   uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "SKILL.md"
+      - "README.md"
+      - "LICENSE"
+      - "references/**"
+      - "scripts/**"
+      - "templates/**"
+      - ".clawhubignore"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (print payload, don't publish)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: clawhub-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "::notice:: Dry run — publishing would normally trigger here."
+            python3 scripts/publish-web.py --dry-run || true
+            exit 0
+          fi
+          python3 scripts/publish-web.py
+
+      - name: Verify live version (post-publish)
+        if: ${{ success() && inputs.dry_run != true }}
+        run: |
+          set -e
+          VERSION=$(grep -m1 '^version:' SKILL.md | sed 's/.*:\s*"*'\''*//;s/"*'\''*$//')
+          echo "Repository version: $VERSION"
+          for i in $(seq 1 12); do
+            LIVE=$(curl -sf https://clawhub.ai/api/v1/skills/wcag-skill \
+              | python3 -c "import json,sys; print(json.load(sys.stdin)['skill']['tags'].get('latest',''))")
+            echo "Poll $i: live = $LIVE"
+            if [ "$LIVE" = "$VERSION" ]; then
+              echo "✅ ClawHub is now serving version $VERSION"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "⚠ Live version still not updated after 3 minutes (security scan may be pending)"
+          # Don't fail — the publish was accepted, just the scan is slow
