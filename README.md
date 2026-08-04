@@ -13,7 +13,7 @@ HTML/CSS, verify, and write accessible markup from the start.
 | Path | Description |
 |------|-------------|
 | `SKILL.md` | Main skill: workflow, common violations, pitfalls, benchmark loop |
-| `templates/` | Known-good benchmark page (107 WHATWG tags, SCORE 191.80) |
+| `templates/` | Reference-only example of a passing accessible page (107 WHATWG tags, landmarks) — study, don't copy into benchmark runs |
 | `scripts/check-tag-coverage.py` | HTML5 tag coverage + tag-balance pre-check |
 | `references/ai-wcag-gauntlet-iteration-log.md` | Error strings & fix history from passing runs |
 

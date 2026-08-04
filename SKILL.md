@@ -135,29 +135,24 @@ Structured scoring mode in the [AI-WCAG-Gauntlet](https://github.com/turbolego/A
 Reports: `test_results.json` (summary), `w3c_report.json`, `axe_report.json`,
 `html5_tags_report.json` (107 WHATWG tags), `pa11y_report.json`, `qualweb_report.json`.
 
-### Fast-path template
+### Anti-cheating: don't copy the template into a benchmark run
 
-Skip setup.sh's bare starter page (107 missing tags + 2 axe violations → always
-a wasted iteration). Copy the known-good page instead — passes all validators
-on iteration 1-2 with SCORE 191.80:
+`templates/index.html` is a **known-good reference page** that passes all
+validators. It exists to show *what a passing result looks like* — NOT to be
+copied into a benchmark run. If you copy it (or the bare starter page) as your
+answer, the run is 100% identical to previous runs and the benchmark is
+**marked as cheated / invalid**. Never use the template as your submission.
 
-```bash
-# 1. Copy the template into the run folder
-cp templates/index.html "<run_folder>/index.html"
-cp templates/style.css "<run_folder>/style.css"
-mkdir -p "<run_folder>/scripts" && cp templates/dummy.js "<run_folder>/scripts/dummy.js"
+Always build the page from scratch in the run folder:
 
-# 2. Replace placeholders
-sed -i 's|__MODEL_NAME__|DeepSeek V4 Pro|g' "<run_folder>/index.html"
-sed -i 's|__MODEL_NAME_ENC__|DeepSeek%20V4%20Pro|g' "<run_folder>/index.html"
-sed -i 's|__RUN_FOLDER__|DeepSeek V4 Pro-20260731-145624|g' "<run_folder>/index.html"
-
-# 3. Pre-check tag coverage
-python3 resources/check_html5_tags.py "<run_folder>/index.html" | tail -5
-
-# 4. Run the suite
-bash test-suite.sh "<run_folder>"
-```
+1. `bash setup.sh` — creates `benchmarks/<MODEL>/<MODEL>-<timestamp>/`.
+2. Write your own `index.html` + `style.css` (+ `scripts/dummy.js`) with real
+   accessible markup: landmarks, headings, alt text, 24px touch targets,
+   contrast ≥ 4.5:1, keyboard support.
+3. Pre-check tag coverage: `python3 resources/check_html5_tags.py "<run_folder>/index.html" | tail -5`.
+4. Run the suite: `bash test-suite.sh "<run_folder>"`.
+5. Read `STATUS:` → `PASS` → stop. `FAIL — Fix the errors` → fix and rerun
+   (max 20 iterations). Log every iteration in `benchmark_log.md`.
 
 ## Pitfalls
 
@@ -215,17 +210,21 @@ tag-coverage pre-check (`check_html5_tags.py`) needs no server at all.
 
 ### Starting from the bare setup.sh starter wastes iterations
 The starter page has 107 missing tags and 2 axe violations → always
-≥1 wasted iteration. Use the fast-path template instead, saving 3-5
-iterations.
+≥1 wasted iteration. Fix the errors iteratively instead: pre-check tag
+coverage with `check_html5_tags.py` before running the suite, and fix
+structure before semantics (see pitfalls above).
 
 ## Reference: score history
 
-Two previous runs with `deepseek-ai/deepseek-v4-pro` via nvidia, label "Hermes":
+One legitimate run with `deepseek-ai/deepseek-v4-pro` via nvidia, label "Hermes":
 
 | Run | Iterations | Final SCORE | Notes |
 |-----|-----------|-------------|-------|
 | 1 | 6 | 168.18 → PASS | Built from scratch, hit all pitfalls |
-| 2 | 2 | **191.80** (max) | Used fast-path template |
+
+A second run (2 iterations, 191.80) used the pre-built template and is
+**not a valid benchmark result** — excluded because template runs are
+identical to each other and don't measure the model.
 
 Full iteration logs are in `references/ai-wcag-gauntlet-iteration-log.md`.
 
@@ -233,8 +232,8 @@ Full iteration logs are in `references/ai-wcag-gauntlet-iteration-log.md`.
 
 - `scripts/check-tag-coverage.py` — HTML5 tag coverage + tag-balance checker.
 - `templates/index.html` + `templates/style.css` + `templates/dummy.js` —
-  known-good benchmark page (107 WHATWG tags, landmarks, 24px touch targets,
-  SCORE 191.80). Copy and replace `__MODEL_NAME__` / `__MODEL_NAME_ENC__` /
-  `__RUN_FOLDER__` placeholders.
+  **reference-only** example of a passing accessible page (107 WHATWG tags,
+  landmarks, 24px touch targets). Study it to learn what validators require —
+  do NOT copy it into a benchmark run (see Anti-cheating above).
 - `references/ai-wcag-gauntlet-iteration-log.md` — exact validator error
   strings and fix history from passing benchmark runs.

@@ -52,14 +52,14 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
   at `~/.cache/puppeteer/chrome/linux-<ver>/chrome-linux64/chrome`; chromedriver v150
   matched system Chrome 150.
 
-## Run 2 — fast-path template (2 iterations, SCORE 191.80)
-- Used the known-good template from `templates/` instead of setup.sh's bare starter.
-- Iteration 1 had the full page with all 107 tags, proper landmarks, absolute CSS paths
-  → FAIL (still scored 12.50 due to stale axe report from the starter page).
-- Iteration 2: PASS with 0 errors across all 5 validators, SCORE 191.80 (max).
-- Key insight: **always copy the template** — avoids the wasted first iteration where the
-  bare starter fails on 107 tags + 2 axe violations. The template approach saves 4-5
-  iterations vs building from scratch.
-- New pitfall discovered: `test-suite.sh` starts its own HTTP server — `curl` returning
-  exit 7 between runs just means the server is down, not a broken path. Don't manually
-  `curl` to verify the CSS during the run.
+## Run 2 — template copy (2 iterations, SCORE 191.80) — INVALID RESULT
+- Copied the known-good template from `templates/` instead of building from scratch.
+- Iteration 1: FAIL (stale axe report from the starter page). Iteration 2: PASS,
+  SCORE 191.80 (max).
+- **This run is NOT a valid benchmark result.** Copying the template makes the run
+  100% identical to any other template run — it measures nothing about the model
+  and is treated as a cheated benchmark. Template runs are excluded from the score
+  history. Always build the page from scratch in the run folder.
+- Pitfall that remains valid: `test-suite.sh` starts its own HTTP server — `curl`
+  returning exit 7 between runs just means the server is down, not a broken path.
+  Don't manually `curl` to verify the CSS during the run.
