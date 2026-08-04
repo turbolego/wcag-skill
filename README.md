@@ -1,6 +1,6 @@
 # wcag-skill
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](SKILL.md)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
 An agent skill for detecting, fixing, and preventing WCAG 2.2 violations in
