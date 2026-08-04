@@ -16,6 +16,7 @@ jobs:
     uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
     with:
       owner: turbolego
+      skill_path: "."
       dry_run: false
     secrets:
       clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}
