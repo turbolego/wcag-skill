@@ -11,9 +11,16 @@ on:
       - "references/**"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   publish:
     uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
+    permissions:
+      contents: read
+      id-token: write
     with:
       owner: turbolego
       skill_path: "."
