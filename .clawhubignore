@@ -1,3 +1,5 @@
 # Development-only files
 README.md
 .gitignore
+.github/
+clawhub-source/
