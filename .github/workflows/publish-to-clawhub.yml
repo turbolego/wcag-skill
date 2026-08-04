@@ -13,21 +13,9 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install ClawHub CLI
-        run: |
-          npm install -g @openclaw/clawhub
-
-      - name: Publish skill to ClawHub
-        env:
-          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-        run: |
-          set -e
-          # Read version from SKILL.md frontmatter to confirm it's in sync
-          VERSION=$(grep -m1 "^version:" SKILL.md | awk '{print $2}')
-          echo "Publishing wcag-skill v${VERSION} to ClawHub..."
-          clawhub skill publish .
-          echo "✅ Published wcag-skill v${VERSION} → https://clawhub.ai/turbolego/skills/wcag-skill"
+    uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
+    with:
+      owner: turbolego
+      dry_run: false
+    secrets:
+      clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}
