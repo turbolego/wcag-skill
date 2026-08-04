@@ -57,4 +57,4 @@ clawhub sync              # update all changed skills
 ## Related
 
 - [AI-WCAG-Gauntlet](https://github.com/turbolego/AI-WCAG-Gauntlet) — benchmark harness
-- [ClawHub](https://clawhub.ai) — skill registry
+- [ClawHub — wcag-skill](https://clawhub.ai/turbolego/skills/wcag-skill) — skill registry
