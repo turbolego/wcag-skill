@@ -9,6 +9,7 @@ on:
       - "templates/**"
       - "scripts/**"
       - "references/**"
+  workflow_dispatch:
 
 jobs:
   publish:
