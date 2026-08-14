@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "SKILL.md"
+      - "skill-card.md"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "SKILL.md"
+      - "skill-card.md"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
@@ -38,4 +40,3 @@ jobs:
         run: npm install --global vnu-jar
       - name: Run bundled smoke tests
         run: bash tests/smoke-test.sh
-

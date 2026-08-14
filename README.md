@@ -13,6 +13,7 @@ evidence, not proof of conformance.
 | Path | Description |
 |------|-------------|
 | `SKILL.md` | Production workflow and accessible-by-default rules |
+| `skill-card.md` | Release record covering purpose, dependencies, risks, outputs, evidence, and ethical considerations |
 | `scripts/a11y-audit.sh` | Tested wrapper for axe, Pa11y, QualWeb, and Nu reports |
 | `references/aaa-evidence-matrix.md` | WCAG 2.2 AAA evidence template and applicability prompts |
 | `references/manual-test-protocol.md` | Required keyboard, reflow, focus, state, media, and assistive-technology checks |

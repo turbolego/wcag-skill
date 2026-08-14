@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "SKILL.md"
+      - "skill-card.md"
       - "README.md"
       - "templates/**"
       - "scripts/**"
