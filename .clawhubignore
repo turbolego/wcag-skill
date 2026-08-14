@@ -3,3 +3,5 @@ README.md
 .gitignore
 .github/
 clawhub-source/
+tests/
+todo.md

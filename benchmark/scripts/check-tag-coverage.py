@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Check HTML5 tag coverage (against html_tags.json) and tag balance for WCAG pages.
+"""Check benchmark tag coverage and tag balance.
 
 Usage:
-  python3 check-tag-coverage.py <index.html> [html_tags.json]
+  python3 benchmark/scripts/check-tag-coverage.py <index.html> [html_tags.json]
 
 Prints expected/used/missing tag counts and reports unbalanced or unclosed tags.
 Note: elements with optional end tags (option, li, p, dt, dd, tr, td, th) may
@@ -13,6 +13,7 @@ treat section/div/main/table mismatches as the real errors.
 import json
 import re
 import sys
+from pathlib import Path
 from html.parser import HTMLParser
 
 VOID = {
@@ -65,7 +66,8 @@ def main():
         print(__doc__)
         sys.exit(1)
     html_path = sys.argv[1]
-    tags_path = sys.argv[2] if len(sys.argv) > 2 else "resources/html_tags.json"
+    default_tags = Path(__file__).resolve().parent.parent / "resources" / "html_tags.json"
+    tags_path = sys.argv[2] if len(sys.argv) > 2 else default_tags
     with open(html_path) as f:
         html = f.read()
     missing = check_coverage(html, tags_path)

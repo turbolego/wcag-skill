@@ -1,239 +1,113 @@
 ---
 name: wcag-skill
-description: "Detect, fix, and prevent WCAG 2.2 violations in web pages. Use when: (1) auditing for accessibility, (2) fixing axe/pa11y/W3C/QualWeb failures, (3) writing accessible HTML/CSS, (4) running the AI-WCAG-Gauntlet benchmark loop."
-version: 1.1.0
+description: "Build, audit, and repair web content against WCAG 2.2. Use when: (1) creating accessible HTML/CSS/JS, (2) remediating accessibility defects, (3) running reproducible automated audits, (4) preparing WCAG 2.2 AAA evidence and human-test records, or (5) running the optional AI-WCAG-Gauntlet benchmark."
 metadata:
+  version: 2.0.0
   openclaw:
     requires:
       bins:
         - node
+        - npm
         - python3
         - curl
-        - git
+        - java
     install:
-      - kind: node
-        package: pa11y
-        bins: [pa11y]
       - kind: node
         package: "@axe-core/cli"
         bins: [axe]
       - kind: node
+        package: pa11y
+        bins: [pa11y]
+      - kind: node
         package: "@qualweb/cli"
-        bins: [qualweb]
+        bins: [qw]
+      - kind: node
+        package: vnu-jar
+        bins: [vnu]
+      - kind: node
+        package: chromedriver
+        bins: [chromedriver]
     homepage: https://github.com/turbolego/wcag-skill
 ---
 
-# WCAG Accessibility — Testing, Fixing, and Building Accessible Pages
+# WCAG 2.2 Accessibility
 
-Detect, fix, and prevent WCAG 2.2 violations in web pages. Covers the full
-accessibility workflow: audit with automated validators, diagnose violations,
-repair `index.html`/`style.css`, verify, and write accessible markup from the
-start. Includes the AI-WCAG-Gauntlet benchmark loop as a structured scoring mode.
+Use this skill to build or audit web content. Prefer native HTML, test through
+HTTP, and treat automated output as evidence—not proof of conformance.
 
-## Quick start
+## Choose the scope first
 
-```bash
-# Install global validators (one-time)
-npm i -g pa11y @axe-core/cli @qualweb/cli
-npx -y puppeteer@24 browsers install chrome@stable
-npm i -g chromedriver@$(google-chrome --version | grep -oP '\d+' | head -1)
+1. Inventory every route, breakpoint, interactive state, overlay, error path,
+   media item, authentication step, and third-party component in scope.
+2. Set the target: `baseline`, `AA`, or `AAA`.
+3. For an AAA target, read **all three** references before implementation:
+   - [`references/validator-workflow.md`](references/validator-workflow.md)
+   - [`references/aaa-evidence-matrix.md`](references/aaa-evidence-matrix.md)
+   - [`references/manual-test-protocol.md`](references/manual-test-protocol.md)
 
-# Audit a page over HTTP
-python3 -m http.server 8000 &
-axe http://localhost:8000/page.html --format json > axe_report.json
-pa11y http://localhost:8000/page.html --json > pa11y_report.json
-qualweb --act-rules -o qualweb_report.json http://localhost:8000/page.html
-```
+> Do not say “WCAG AAA compliant” from automated results. Level AAA requires
+> every applicable A, AA, and AAA success criterion for the full page and any
+> complete process. Record an explicit evidence row or non-applicability
+> rationale for each criterion.
 
-## Workflow: Audit → Triage → Fix → Verify → Prevent
+## Build accessible by default
 
-### 1. Audit
+- Use one `<main>`, a meaningful `<title>`, one clear `<h1>`, and landmarks
+  only where their semantics help orientation. Use `<section>` for a meaningful
+  thematic grouping; give it an accessible heading when that improves its name.
+  Use `<div>` for visual grouping alone.
+- Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
+  disclosure/dialog patterns before inventing ARIA widgets. Never put a
+  focusable element inside `aria-hidden="true"` content.
+- Give informative images equivalent text; use `alt=""` only for decorative
+  images. Provide the relevant captions, transcript, audio description, or
+  media alternative for media.
+- Label every form control, group related controls with `<fieldset><legend>`,
+  use appropriate input types and `autocomplete`, preserve entered data after
+  recoverable errors, and identify errors in text as well as colour.
+- Keep DOM order aligned with reading and Tab order. Provide a skip link,
+  visible focus, keyboard operation, and no keyboard trap.
+- Do not communicate status, errors, required fields, or instructions by colour,
+  position, shape, or sound alone. Respect `prefers-reduced-motion`.
 
-Run all four validators over HTTP (file:// misses base-href/CSS-loading bugs):
-```bash
-python3 -m http.server 8000 &   # serve from the PARENT of the site root
-axe http://localhost:8000/page.html --format json > axe_report.json
-pa11y http://localhost:8000/page.html --json > pa11y_report.json
-node scripts/run-w3c-validator.mjs page.html w3c_report.json
-qualweb --act-rules -o qualweb_report.json http://localhost:8000/page.html
-```
+## Use the right numeric target
 
-### 2. Triage
+| Requirement | Baseline / AA minimum | AAA target |
+|---|---:|---:|
+| Normal text contrast | 4.5:1 | 7:1 |
+| Large text contrast | 3:1 | 4.5:1 |
+| UI component / focus contrast | 3:1 | 3:1 plus AAA focus-area rule |
+| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
 
-Read reports programmatically — don't eyeball huge JSON files:
-```bash
-python3 -c "
-import json
-r = json.load(open('axe_report.json'))
-for v in r.get('violations', []):
-    print(v['id'], '—', v['help'])
-    for n in v.get('nodes', []): print('  ', n['target'], n.get('failureSummary','')[:200])
-"
-```
+For AAA, make the keyboard focus indicator at least as large as a two-CSS-pixel
+perimeter of the unfocused component and give changed pixels at least 3:1
+contrast. Ensure no part of a focused component is obscured by author-created
+content.
 
-Prioritize: W3C validity first (cascading errors), then landmarks/structure,
-then perceivable, then operable, then robust.
+## Audit → triage → fix → verify
 
-### 3. Fix — common violations
+1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
+   matching Chromedriver available. Set `AXE_CHROME_PATH` and
+   `AXE_CHROMEDRIVER_PATH` when auto-detection is insufficient.
+2. Serve the site over HTTP. Run the reproducible wrapper in
+   [`references/validator-workflow.md`](references/validator-workflow.md).
+3. Triage structural and markup errors first, then semantic, visual, operable,
+   and understandable issues. Deduplicate findings across tools; retain raw
+   JSON reports.
+4. Fix one coherent group of issues, rerun the audit, and record the result.
+   Review every `incomplete`, `cantTell`, warning, and false-positive decision.
+5. For AAA, complete the mandatory manual protocol and evidence matrix before
+   any conformance statement.
 
-**Landmarks & structure**
-- Exactly one `<main>`. Content goes in `<main>`, header in `<header>`,
-  footer in `<footer>`, nav in `<nav aria-label>`.
-- `<section>` needs a heading; use `aria-labelledby`.
+## Report precisely
 
-**Images & media**
-- Every `<img>` needs `alt`. Decorative: `alt=""` (empty, not missing).
-- `<audio>`/`<video>`: provide captions/transcripts.
-- `<canvas>`: provide fallback content + `aria-label`.
+For each finding, report the route/state, relevant success criterion, affected
+selector or component, user impact, exact change, validation method, and retest
+result. Say “no automated findings” when that is all the tools establish.
 
-**Links & buttons**
-- Link text must be descriptive (no "click here").
-- Touch targets ≥ 24×24px with spacing between neighbors:
-  `nav a { min-height: 24px; min-width: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }`
-- Don't wrap interactive elements in `<a>` (button, input, select, textarea,
-  iframe, audio[controls], video[controls], details, dialog, embed).
+## Optional benchmark extension
 
-**Forms**
-- Every `<input>`/`<select>`/`<textarea>` has `<label for>` or `aria-label`.
-- Group related fields in `<fieldset><legend>`.
-- Use semantic types (email, url, date, search) + `autocomplete`.
-
-**Color & contrast**
-- Text ≥ 4.5:1, large text ≥ 3:1, UI components ≥ 3:1.
-- Don't rely on color alone to convey meaning.
-
-**ARIA (use sparingly)**
-- Prefer native HTML. If `<button>` works, don't use `role="button"` on a div.
-- `aria-hidden="true"` must not contain focusable elements.
-
-### 4. Verify
-
-Iterate: fix → rerun → read remaining violations → fix again. Never batch a
-fix and skip the rerun; cascading errors hide what's broken.
-
-### 5. Prevent — accessible-by-default checklist
-
-Build new pages with accessibility first:
-- Landmark structure first: `<header>`, `<nav>`, `<main>`, `<footer>`, one `<h1>`.
-- Heading levels homing (h1 → h2 → h3).
-- All interactive elements are real `<a>`/`<button>`/`<input>`.
-- `alt` text on every image; captions/transcripts for media.
-- Contrast-check the palette before writing CSS.
-- Keyboard-only navigation (Tab order = DOM order, visible focus ring).
-- Test zoom at 200% — layout must not break or clip.
-
-## AI-WCAG-Gauntlet benchmark loop
-
-Structured scoring mode in the [AI-WCAG-Gauntlet](https://github.com/turbolego/AI-WCAG-Gauntlet) repo:
-
-1. `bash setup.sh` — creates `benchmarks/<MODEL>/<MODEL>-<timestamp>/`.
-2. Find the newest folder: `ls -t benchmarks/<MODEL>/ | head -1`.
-3. `bash test-suite.sh "./benchmarks/<MODEL>/<folder>"` — runs all 5 validators.
-4. Read `STATUS:` in the output: `PASS` → stop. `FAIL — Maximum iterations` → stop, report. `FAIL — Fix the errors` → fix and rerun (max 20 iterations).
-5. Log every iteration in `benchmark_log.md`.
-
-Reports: `test_results.json` (summary), `w3c_report.json`, `axe_report.json`,
-`html5_tags_report.json` (107 WHATWG tags), `pa11y_report.json`, `qualweb_report.json`.
-
-### Anti-cheating: don't copy the template into a benchmark run
-
-`templates/index.html` is a **known-good reference page** that passes all
-validators. It exists to show *what a passing result looks like* — NOT to be
-copied into a benchmark run. If you copy it (or the bare starter page) as your
-answer, the run is 100% identical to previous runs and the benchmark is
-**marked as cheated / invalid**. Never use the template as your submission.
-
-Always build the page from scratch in the run folder:
-
-1. `bash setup.sh` — creates `benchmarks/<MODEL>/<MODEL>-<timestamp>/`.
-2. Write your own `index.html` + `style.css` (+ `scripts/dummy.js`) with real
-   accessible markup: landmarks, headings, alt text, 24px touch targets,
-   contrast ≥ 4.5:1, keyboard support.
-3. Pre-check tag coverage: `python3 resources/check_html5_tags.py "<run_folder>/index.html" | tail -5`.
-4. Run the suite: `bash test-suite.sh "<run_folder>"`.
-5. Read `STATUS:` → `PASS` → stop. `FAIL — Fix the errors` → fix and rerun
-   (max 20 iterations). Log every iteration in `benchmark_log.md`.
-
-## Pitfalls
-
-### Base href breaks relative CSS
-`<base href="/repo/">` makes `href="style.css"` resolve to repo root → 404 →
-CSS never applied → target-size/contrast violations persist regardless of CSS
-content. Fix: absolute URLs in `<link>`/`<script src>` (URL-encode spaces as `%20`).
-
-### W3C errors cascade
-One unclosed `<section>` or stray `</fieldset>` can produce 40+ W3C errors and
-phantom axe failures. Fix structure first, then semantics.
-
-### Unclosed section line numbers are misleading
-"End tag main seen, but there were open elements" + "Unclosed element section"
-points at the first section, not the offender. Use the bundled balance script
-(`scripts/check-tag-coverage.py`) instead of trace.
-
-### Head-only tags in `<body>` cause W3C errors
-`<title>`, `<base>`, `<link>`, `<style>`, `<col>`, `<param>`, `<area>` (without
-`<map>`) are flagged out of context. Keep them in legitimate contexts
-(col in colgroup, param in object).
-
-### axe target-size needs size AND spacing
-Not just `min-height: 24px` — also `padding`/`margin` between neighbors.
-Inline `<style>` in `<head>` works if external CSS loading is suspect.
-
-### `<selectedcontent>` inside `<select>` is rejected
-A validator-version quirk: `<selectedcontent>` is a real HTML element, but the
-Nu validator version rejects it inside `<select>`. Put it in a plain `<div>`.
-The tag checker only greps for the literal string — it doesn't care about
-the parent element.
-
-### Optional-end-tag elements look unclosed
-`<option>`, `<li>`, `<p>`, `<dt>`, `<dd>`, `<tr>`, `<td>`, `<th>` show as
-"unclosed" in strict balance checkers but are valid.
-Treat `<section>`/`<div>`/`<main>`/`<table>` mismatches as the real errors.
-
-### Validators disagree
-A page can pass axe and fail QualWeb (or vice versa). Pass means PASSING ALL
-of them. Triage by the union of failures, not by one tool.
-
-### Missing `<main>` landmark
-No `<main>` → axe `landmark-one-main` + `region`. Always wrap content in
-`<main>` plus header/footer/nav landmarks.
-
-### Screenshots lie about accessibility
-Visual "fixes" (larger fonts, colors) without semantic markup don't move
-validator scores. Fix the DOM, not the pixels.
-
-### test-suite.sh starts its own HTTP server
-The test suite runs on port 28763 (`A11Y_SERVE_PORT`) per run — don't start on
-one manually. Between runs the server is down, so `curl` returns exit 7
-(connection refused) = "server not running", not a broken path. The local
-tag-coverage pre-check (`check_html5_tags.py`) needs no server at all.
-
-### Starting from the bare setup.sh starter wastes iterations
-The starter page has 107 missing tags and 2 axe violations → always
-≥1 wasted iteration. Fix the errors iteratively instead: pre-check tag
-coverage with `check_html5_tags.py` before running the suite, and fix
-structure before semantics (see pitfalls above).
-
-## Reference: score history
-
-One legitimate run with `deepseek-ai/deepseek-v4-pro` via nvidia, label "Hermes":
-
-| Run | Iterations | Final SCORE | Notes |
-|-----|-----------|-------------|-------|
-| 1 | 6 | 168.18 → PASS | Built from scratch, hit all pitfalls |
-
-A second run (2 iterations, 191.80) used the pre-built template and is
-**not a valid benchmark result** — excluded because template runs are
-identical to each other and don't measure the model.
-
-Full iteration logs are in `references/ai-wcag-gauntlet-iteration-log.md`.
-
-## Support files
-
-- `scripts/check-tag-coverage.py` — HTML5 tag coverage + tag-balance checker.
-- `templates/index.html` + `templates/style.css` + `templates/dummy.js` —
-  **reference-only** example of a passing accessible page (107 WHATWG tags,
-  landmarks, 24px touch targets). Study it to learn what validators require —
-  do NOT copy it into a benchmark run (see Anti-cheating above).
-- `references/ai-wcag-gauntlet-iteration-log.md` — exact validator error
-  strings and fix history from passing benchmark runs.
+The AI-WCAG-Gauntlet tag-coverage experiment is **not** a production
+accessibility gate. Use it only when the task explicitly requests benchmark
+scoring. Read [`benchmark/README.md`](benchmark/README.md) then; never copy its
+reference template into a benchmark submission.
