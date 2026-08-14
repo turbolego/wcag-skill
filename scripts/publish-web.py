@@ -112,6 +112,22 @@ def build_multipart(
     return bytes(body)
 
 
+def build_upload_request(
+    payload: dict, files: list[tuple[str, bytes]], token: str, boundary: str
+) -> Request:
+    """Create the authenticated multipart request without sending it."""
+    body = build_multipart(payload, files, boundary)
+    req = Request(
+        "https://clawhub.ai/api/v1/skills",
+        data=body,
+        method="POST",
+    )
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+    req.add_header("Accept", "application/json")
+    return req
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publish wcag-skill to ClawHub")
     parser.add_argument("--dry-run", action="store_true", help="Print payload, skip upload")
@@ -162,18 +178,8 @@ def main() -> None:
         return
 
     boundary = f"----ClawHubUpload{uuid.uuid4().hex[:12]}"
-    body = build_multipart(boundary, payload, files)
-
-    req = Request(
-        "https://clawhub.ai/api/v1/skills",
-        data=body,
-        method="POST",
-    )
-    req.add_header("Authorization", f"Bearer {token}")
-    req.add_header(
-        "Content-Type", f"multipart/form-data; boundary={boundary}"
-    )
-    req.add_header("Accept", "application/json")
+    req = build_upload_request(payload, files, token, boundary)
+    body = req.data
 
     print(f"✓ Uploading {len(body):,} bytes...")
     try:

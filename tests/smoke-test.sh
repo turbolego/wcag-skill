@@ -8,6 +8,7 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
 python3 -m py_compile benchmark/scripts/check-tag-coverage.py
+python3 tests/test-publish-web.py
 node --check scripts/run-w3c-validator.mjs
 bash scripts/a11y-audit.sh --help >/dev/null
 
