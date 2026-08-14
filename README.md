@@ -1,21 +1,23 @@
 # wcag-skill
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
-An agent skill for detecting, fixing, and preventing WCAG 2.2 violations in
-web pages. Covers the full accessibility workflow: audit with automated
-validators (axe-core, pa11y, QualWeb, W3C), diagnose violations, repair
-HTML/CSS, verify, and write accessible markup from the start.
+An agent skill for building, auditing, and repairing WCAG 2.2 web content.
+It provides a reproducible automated audit wrapper, an explicit WCAG 2.2 AAA
+evidence matrix, and a mandatory human-test protocol. Automated results are
+evidence, not proof of conformance.
 
 ## Contents
 
 | Path | Description |
 |------|-------------|
-| `SKILL.md` | Main skill: workflow, common violations, pitfalls, benchmark loop |
-| `templates/` | Reference-only example of a passing accessible page (107 WHATWG tags, landmarks) — study, don't copy into benchmark runs |
-| `scripts/check-tag-coverage.py` | HTML5 tag coverage + tag-balance pre-check |
-| `references/ai-wcag-gauntlet-iteration-log.md` | Error strings & fix history from passing runs |
+| `SKILL.md` | Production workflow and accessible-by-default rules |
+| `scripts/a11y-audit.sh` | Tested wrapper for axe, Pa11y, QualWeb, and Nu reports |
+| `references/aaa-evidence-matrix.md` | WCAG 2.2 AAA evidence template and applicability prompts |
+| `references/manual-test-protocol.md` | Required keyboard, reflow, focus, state, media, and assistive-technology checks |
+| `benchmark/` | Optional AI-WCAG-Gauntlet extension; not a production conformance gate |
+| `tests/` | Fixture and CI smoke test for documented bundled commands |
 
 ## Install
 
@@ -39,10 +41,26 @@ openclaw skills install ./path/to/wcag-skill --as wcag-skill
 ## Prerequisites
 
 ```bash
-npm i -g pa11y @axe-core/cli @qualweb/cli
-npx puppeteer browsers install chrome@stable
-npm i -g chromedriver  # match your system Chrome major version
+npm i -g @axe-core/cli pa11y @qualweb/cli vnu-jar chromedriver
+# Install Chrome or Chromium separately. Chromedriver must match its major version.
 ```
+
+## Audit a page
+
+Serve the target page over HTTP, then run the packaged wrapper:
+
+```bash
+bash scripts/a11y-audit.sh http://localhost:8000 ./a11y-reports
+```
+
+For WCAG 2.2 AAA work, complete the matrix and manual-test protocol referenced
+from `SKILL.md` before making any conformance statement.
+
+## Optional benchmark
+
+The AI-WCAG-Gauntlet experiment is intentionally separated from production
+accessibility guidance. Read [`benchmark/README.md`](benchmark/README.md) only
+when benchmark scoring is explicitly requested.
 
 ## Publishing
 

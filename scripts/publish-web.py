@@ -7,11 +7,11 @@ stores files directly and skips the buggy per-file ticket verification.
 
 Required: CLAWHUB_TOKEN environment variable (a clh_... API token).
 """
-import argparse, hashlib, json, os, sys, uuid
+import argparse, fnmatch, hashlib, json, os, re, sys, uuid
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-SKILL_DIR = Path(os.environ.get("GITHUB_WORKSPACE", Path(__file__).resolve().parent))
+SKILL_DIR = Path(os.environ.get("GITHUB_WORKSPACE", Path(__file__).resolve().parent.parent))
 SKILL_SLUG = "wcag-skill"
 
 
@@ -24,18 +24,49 @@ def get_token() -> str:
     return token
 
 
+def load_ignore_patterns(root: Path) -> list[str]:
+    """Read the simple path patterns used by .clawhubignore."""
+    ignore_file = root / ".clawhubignore"
+    if not ignore_file.exists():
+        return []
+    return [
+        line.strip()
+        for line in ignore_file.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+
+def is_ignored(rel: str, patterns: list[str]) -> bool:
+    """Match a path against file, directory, and shell-style ignore patterns."""
+    for pattern in patterns:
+        normalized = pattern.rstrip("/")
+        if rel == normalized or rel.startswith(f"{normalized}/"):
+            return True
+        if fnmatch.fnmatch(rel, pattern):
+            return True
+    return False
+
+
 def collect_files(root: Path) -> list[tuple[str, bytes]]:
-    """Walk skill directory, skip ignored paths, return [(relpath, bytes)]."""
+    """Walk skill directory, apply .clawhubignore, return [(relpath, bytes)]."""
     files: list[tuple[str, bytes]] = []
+    ignored_patterns = load_ignore_patterns(root)
     for dirpath, dirnames, filenames in os.walk(str(root)):
+        current = Path(dirpath)
         dirnames[:] = [
-            d for d in dirnames if not d.startswith(".") and d != "node_modules"
+            d
+            for d in dirnames
+            if not d.startswith(".")
+            and d != "node_modules"
+            and not is_ignored(str((current / d).relative_to(root)), ignored_patterns)
         ]
         for fn in sorted(filenames):
             if fn.startswith(".") and fn != ".clawhubignore":
                 continue
-            abs_path = Path(dirpath) / fn
+            abs_path = current / fn
             rel = str(abs_path.relative_to(root))
+            if is_ignored(rel, ignored_patterns):
+                continue
             data = abs_path.read_bytes()
             files.append((rel, data))
     return files
@@ -45,8 +76,9 @@ def read_version(skill_dir: Path) -> str:
     """Extract version from SKILL.md frontmatter."""
     content = (skill_dir / "SKILL.md").read_text()
     for line in content.split("\n"):
-        if line.startswith("version:"):
-            return line.split(":", 1)[1].strip().strip('"').strip("'")
+        match = re.match(r"^\s*version:\s*['\"]?([^'\"\s]+)", line)
+        if match:
+            return match.group(1)
     return "unknown"
 
 
@@ -78,6 +110,22 @@ def build_multipart(
 
     add(f"--{boundary}--\r\n")
     return bytes(body)
+
+
+def build_upload_request(
+    payload: dict, files: list[tuple[str, bytes]], token: str, boundary: str
+) -> Request:
+    """Create the authenticated multipart request without sending it."""
+    body = build_multipart(payload, files, boundary)
+    req = Request(
+        "https://clawhub.ai/api/v1/skills",
+        data=body,
+        method="POST",
+    )
+    req.add_header("Authorization", f"Bearer {token}")
+    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+    req.add_header("Accept", "application/json")
+    return req
 
 
 def main() -> None:
@@ -130,18 +178,8 @@ def main() -> None:
         return
 
     boundary = f"----ClawHubUpload{uuid.uuid4().hex[:12]}"
-    body = build_multipart(boundary, payload, files)
-
-    req = Request(
-        "https://clawhub.ai/api/v1/skills",
-        data=body,
-        method="POST",
-    )
-    req.add_header("Authorization", f"Bearer {token}")
-    req.add_header(
-        "Content-Type", f"multipart/form-data; boundary={boundary}"
-    )
-    req.add_header("Accept", "application/json")
+    req = build_upload_request(payload, files, token, boundary)
+    body = req.data
 
     print(f"✓ Uploading {len(body):,} bytes...")
     try:
