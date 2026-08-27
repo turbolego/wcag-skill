@@ -1,16 +1,15 @@
 name: Publish to ClawHub
 
+# Manual-only: the reusable CLI-based publisher
+# (openclaw/clawhub/.github/workflows/skill-publish.yml) currently fails
+# with "Invalid publish output: 'pending-publication'" whenever a prior
+# publish attempt for the same version is still undergoing security scan
+# review; its status-key mapping doesn't recognize that state
+# (see run 33077893243). publish-web.yml is the active push-triggered
+# publisher until that upstream bug is fixed. Do not add a push trigger
+# here at the same time as publish-web.yml — exactly one workflow may
+# publish on push, or the two can race and double-publish the same commit.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "SKILL.md"
-      - "skill-card.md"
-      - "README.md"
-      - "templates/**"
-      - "scripts/**"
-      - "references/**"
-      - "benchmark/**"
   workflow_dispatch:
 
 permissions:

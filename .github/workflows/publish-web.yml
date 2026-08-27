@@ -1,19 +1,32 @@
 name: Publish to ClawHub (Web Upload)
 
-# Manual-only fallback publisher that uses the multipart web-upload API
-# path. The CLI ticket-upload path is blocked by a server-side
-# clock-domain bug (openclaw/clawhub#3397, PR #3400).
+# Active push-triggered publisher. Uses the multipart web-upload API path
+# directly instead of the reusable CLI-based workflow
+# (openclaw/clawhub/.github/workflows/skill-publish.yml), which currently
+# has two known upstream bugs that block it: a server-side clock-domain
+# bug on the ticket-upload path (openclaw/clawhub#3397, PR #3400), and an
+# unhandled "pending-publication" status when a prior publish for the same
+# version is still in security-scan review (run 33077893243). This
+# workflow's own script (scripts/publish-web.py) treats a pending scan as
+# a normal successful publish, so it isn't affected by either bug.
 #
-# This workflow is intentionally workflow_dispatch-only: it must never
-# have a push trigger, because publish-to-clawhub.yml already publishes
-# on push to main. Two push-triggered publishers can both react to the
-# same commit and race to publish the same version.
-#
-# Once the upstream bug is fixed, remove this workflow and rely solely
-# on publish-to-clawhub.yml:
-#   uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
+# publish-to-clawhub.yml is kept as a manual (workflow_dispatch-only)
+# option. Do not give it a push trigger at the same time as this workflow —
+# exactly one workflow may publish on push, or the two can race and
+# double-publish the same commit.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "SKILL.md"
+      - "skill-card.md"
+      - "README.md"
+      - "LICENSE"
+      - "references/**"
+      - "scripts/**"
+      - "benchmark/**"
+      - ".clawhubignore"
   workflow_dispatch:
     inputs:
       dry_run:

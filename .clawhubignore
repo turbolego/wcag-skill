@@ -5,6 +5,9 @@ README.md
 clawhub-source/
 tests/
 todo.md
+Audit of wcag-skill.md
+package.json
+package-lock.json
 
 # Generated artifacts that must never ship in a release
 __pycache__/
