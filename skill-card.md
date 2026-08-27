@@ -56,7 +56,7 @@ The reproducible automated audit route requires Node.js, npm, Python 3, curl, Ja
 
 ## Skill Version
 
-2.0.2 (source: `SKILL.md` metadata; release evidence is maintained in the source repository and its CI workflows).
+2.0.3 (source: `SKILL.md` metadata; release evidence is maintained in the source repository and its CI workflows).
 
 ## Ethical Considerations
 

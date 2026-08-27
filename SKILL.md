@@ -2,7 +2,7 @@
 name: wcag-skill
 description: "Build, audit, and repair web content against WCAG 2.2. Use when: (1) creating accessible HTML/CSS/JS, (2) remediating accessibility defects, (3) running reproducible automated audits, (4) preparing WCAG 2.2 AAA evidence and human-test records, or (5) running the optional AI-WCAG-Gauntlet benchmark."
 metadata:
-  version: 2.0.2
+  version: 2.0.3
   openclaw:
     requires:
       bins:
