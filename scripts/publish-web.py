@@ -203,9 +203,18 @@ def main() -> None:
             print(f"\n❌ Publish rejected: {result}", file=sys.stderr)
             sys.exit(1)
     except Exception as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        body_text = ""
         if hasattr(e, "read"):
             body_text = e.read().decode(errors="replace")
+        if "already exists" in body_text.lower():
+            print(
+                f"❌ Publish failed: version {version} already exists on ClawHub. "
+                "Bump the version in SKILL.md metadata and retry.",
+                file=sys.stderr,
+            )
+        else:
+            print(f"❌ Error: {e}", file=sys.stderr)
+        if body_text:
             print(body_text[:1000], file=sys.stderr)
         sys.exit(2)
 
