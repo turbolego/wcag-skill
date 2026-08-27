@@ -22,8 +22,8 @@ Global. Review local accessibility, privacy, procurement, and regulatory require
 
 ## Requirements / Dependencies
 
-**Requires API Key or External Credential:** Optional.  
-**Credential Type(s):** `CLAWHUB_TOKEN` only when deliberately running the direct ClawHub publishing helper; no credential is required for the core skill or local audits.
+**Requires API Key or External Credential:** No, for the published skill.  
+**Credential Type(s):** None. `CLAWHUB_TOKEN` is used only by this repository's own release tooling (`scripts/publish-web.py`), which is excluded from the published skill bundle via `.clawhubignore` and is never installed alongside the skill.
 
 The reproducible automated audit route requires Node.js, npm, Python 3, curl, Java, a Chromium-family browser with matching Chromedriver, and the declared `@axe-core/cli`, `pa11y`, `@qualweb/cli`, and `vnu-jar` packages. Do not include secrets in prompts, reports, commits, or other output. Use least-privilege credentials and rotate them as appropriate.
 
@@ -34,7 +34,7 @@ The reproducible automated audit route requires Node.js, npm, Python 3, curl, Ja
 | Automated accessibility tools can miss defects or return findings that require judgement; clean reports do not prove WCAG conformance. | Treat automated output as evidence only. Review every warning, `incomplete`, and `cantTell` result, then complete the evidence matrix and mandatory human-test protocol before claiming AA or AAA conformance. |
 | Browser-based audits fetch target pages and may write page content or audit data into local report artifacts. | Run audits only against intended targets, write reports to approved locations, and review report contents before sharing or publishing them. |
 | Suggested remediation can change application source and may be incorrect for the product, framework, or user workflow. | Review code diffs, exercise affected states with users and assistive technology, and deploy only through the organization’s normal change-control process. |
-| `scripts/publish-web.py` can upload the skill to ClawHub when supplied with a deployment credential. | Run the publisher only when publication is intended, safeguard `CLAWHUB_TOKEN`, use `--dry-run` first, and review the package manifest before uploading. |
+| `scripts/publish-web.py` (repository release tooling, not part of the published skill) can upload this repository to ClawHub when supplied with a deployment credential. | The file is excluded from the published skill bundle via `.clawhubignore`. Maintainers only: run it with `--dry-run` first, safeguard `CLAWHUB_TOKEN`, and review the package manifest before uploading. |
 
 ## References
 
@@ -56,7 +56,7 @@ The reproducible automated audit route requires Node.js, npm, Python 3, curl, Ja
 
 ## Skill Version
 
-2.0.1 (source: `SKILL.md` metadata; release evidence is maintained in the source repository and its CI workflows).
+2.0.2 (source: `SKILL.md` metadata; release evidence is maintained in the source repository and its CI workflows).
 
 ## Ethical Considerations
 

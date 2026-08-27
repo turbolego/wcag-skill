@@ -1,6 +1,6 @@
 # wcag-skill
 
-[![Version](https://img.shields.io/badge/version-2.0.1-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
 An agent skill for building, auditing, and repairing WCAG 2.2 web content.
@@ -19,6 +19,10 @@ evidence, not proof of conformance.
 | `references/manual-test-protocol.md` | Required keyboard, reflow, focus, state, media, and assistive-technology checks |
 | `benchmark/` | Optional AI-WCAG-Gauntlet extension; not a production conformance gate |
 | `tests/` | Fixture and CI smoke test for documented bundled commands |
+
+`scripts/publish-web.py` is repository release tooling for maintainers only. It
+reads `CLAWHUB_TOKEN` and is excluded from the published skill bundle via
+`.clawhubignore`, so an installed copy of this skill never contains it.
 
 ## Install
 

@@ -2,7 +2,7 @@
 name: wcag-skill
 description: "Build, audit, and repair web content against WCAG 2.2. Use when: (1) creating accessible HTML/CSS/JS, (2) remediating accessibility defects, (3) running reproducible automated audits, (4) preparing WCAG 2.2 AAA evidence and human-test records, or (5) running the optional AI-WCAG-Gauntlet benchmark."
 metadata:
-  version: 2.0.1
+  version: 2.0.2
   openclaw:
     requires:
       bins:
@@ -11,6 +11,13 @@ metadata:
         - python3
         - curl
         - java
+    envVars:
+      - name: AXE_CHROME_PATH
+        required: false
+        description: Explicit Chrome/Chromium binary path for scripts/a11y-audit.sh when auto-detection fails.
+      - name: AXE_CHROMEDRIVER_PATH
+        required: false
+        description: Explicit Chromedriver binary path for scripts/a11y-audit.sh when auto-detection fails.
     install:
       - kind: node
         package: "@axe-core/cli"

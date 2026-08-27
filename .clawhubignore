@@ -9,6 +9,11 @@ Audit of wcag-skill.md
 package.json
 package-lock.json
 
+# Release/CI tooling that is unrelated to the WCAG skill itself and must
+# never ship inside the published skill bundle (it reads CLAWHUB_TOKEN and
+# uploads to an external API — see security-audit finding Tp4).
+scripts/publish-web.py
+
 # Generated artifacts that must never ship in a release
 __pycache__/
 *.py[cod]
