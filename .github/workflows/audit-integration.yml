@@ -1,0 +1,110 @@
+name: Audit wrapper integration test
+
+# Exercises the actual documented command (scripts/a11y-audit.sh) end to end
+# against pinned tool versions, unlike tests/smoke-test.sh which only checks
+# `--help` and unit-level pieces. This is what F-02 of the repository audit
+# asked for: proof that axe, Pa11y, QualWeb, and Nu all run successfully
+# together against a served page, and that a page with real accessibility
+# problems produces a non-empty, useful report.
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/fixtures/**"
+      - ".github/workflows/audit-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/fixtures/**"
+      - ".github/workflows/audit-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install pinned CLI tools
+        run: npm ci
+
+      - name: Install Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Align chromedriver to the installed Chrome major version
+        # chromedriver and Chrome must share a major version. package.json
+        # pins a known-good chromedriver release for local/reproducible use;
+        # CI re-resolves the matching major version against whatever Chrome
+        # build the runner image provides, since that build changes on its
+        # own release cadence outside this repository's control.
+        run: |
+          set -euo pipefail
+          chrome_major="$("${{ steps.setup-chrome.outputs.chrome-path }}" --version | grep -oE '[0-9]+' | head -1)"
+          echo "Installed Chrome major version: $chrome_major"
+          npm install --no-save "chromedriver@$chrome_major"
+
+      - name: Serve test fixtures
+        run: |
+          python3 -m http.server 8000 --directory tests/fixtures &
+          echo $! > /tmp/http-server.pid
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8000/valid-page.html >/dev/null && break
+            sleep 0.5
+          done
+
+      - name: Run full audit against a known-good fixture
+        env:
+          AXE_CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          bash scripts/a11y-audit.sh http://localhost:8000/valid-page.html ./reports-good
+          for f in axe_report.json pa11y_report.json qualweb_report.json w3c_source_html_report.json; do
+            test -s "./reports-good/$f"
+            python3 -c "import json,sys; json.load(open('./reports-good/$f'))"
+          done
+
+      - name: Run full audit against a deliberately inaccessible fixture
+        env:
+          AXE_CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+        run: |
+          set -euo pipefail
+          bash scripts/a11y-audit.sh http://localhost:8000/inaccessible-page.html ./reports-bad
+          for f in axe_report.json pa11y_report.json qualweb_report.json w3c_source_html_report.json; do
+            test -s "./reports-bad/$f"
+            python3 -c "import json,sys; json.load(open('./reports-bad/$f'))"
+          done
+          python3 - <<'PY'
+          import json, sys
+          axe = json.load(open("./reports-bad/axe_report.json"))
+          violations = axe[0]["violations"] if isinstance(axe, list) else axe.get("violations", [])
+          if not violations:
+              print("Expected axe to report violations on the inaccessible fixture", file=sys.stderr)
+              sys.exit(1)
+          print(f"axe reported {len(violations)} violation categories, as expected.")
+          PY
+
+      - name: Stop test server
+        if: always()
+        run: kill "$(cat /tmp/http-server.pid)" 2>/dev/null || true

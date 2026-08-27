@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Integration Test Negative Fixture</title>
+    <style>
+      body { background: #fff; }
+      .low-contrast { color: #ddd; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <!-- Deliberately inaccessible: missing alt text, unlabeled input, low
+         contrast text, and no lang attribute — used only to confirm the
+         audit pipeline actually detects real violations. -->
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
+    <p class="low-contrast">Hard to read text on a white background.</p>
+    <form>
+      <input type="text" name="q">
+      <button>Go</button>
+    </form>
+  </body>
+</html>

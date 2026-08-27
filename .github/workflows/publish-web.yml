@@ -1,24 +1,19 @@
 name: Publish to ClawHub (Web Upload)
 
-# Fallback publisher that uses the multipart web-upload API path.
-# The CLI ticket-upload path is blocked by a server-side clock-domain
-# bug (openclaw/clawhub#3397, PR #3400). This workflow bypasses it
-# while the PR is pending.
+# Manual-only fallback publisher that uses the multipart web-upload API
+# path. The CLI ticket-upload path is blocked by a server-side
+# clock-domain bug (openclaw/clawhub#3397, PR #3400).
 #
-# Once merged, you can switch back to the reusable workflow:
+# This workflow is intentionally workflow_dispatch-only: it must never
+# have a push trigger, because publish-to-clawhub.yml already publishes
+# on push to main. Two push-triggered publishers can both react to the
+# same commit and race to publish the same version.
+#
+# Once the upstream bug is fixed, remove this workflow and rely solely
+# on publish-to-clawhub.yml:
 #   uses: openclaw/clawhub/.github/workflows/skill-publish.yml@main
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "SKILL.md"
-      - "README.md"
-      - "LICENSE"
-      - "references/**"
-      - "scripts/**"
-      - "templates/**"
-      - ".clawhubignore"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -46,7 +41,7 @@ jobs:
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "::notice:: Dry run — publishing would normally trigger here."
-            python3 scripts/publish-web.py --dry-run || true
+            python3 scripts/publish-web.py --dry-run
             exit 0
           fi
           python3 scripts/publish-web.py

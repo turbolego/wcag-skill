@@ -1,0 +1,16 @@
+{
+  "name": "wcag-skill-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pinned CLI dependencies for scripts/a11y-audit.sh. Not published; install with `npm ci` before running the audit wrapper.",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@axe-core/cli": "4.13.0",
+    "@qualweb/cli": "0.7.31",
+    "chromedriver": "152.0.2",
+    "pa11y": "9.1.1",
+    "vnu-jar": "26.8.21"
+  }
+}

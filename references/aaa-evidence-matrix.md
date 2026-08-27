@@ -51,9 +51,11 @@ tool warning into a pass without explaining the decision.
 
 ## Inherited WCAG 2.2 requirements to call out
 
-AAA also requires all applicable A and AA criteria. Explicitly verify the nine
-WCAG 2.2 additions: 2.4.11 Focus Not Obscured (Minimum), 2.4.12 Focus Not
-Obscured (Enhanced), 2.4.13 Focus Appearance, 2.5.7 Dragging Movements, 2.5.8
-Target Size (Minimum), 3.2.6 Consistent Help, 3.3.7 Redundant Entry, 3.3.8
-Accessible Authentication (Minimum), and 3.3.9 Accessible Authentication
-(Enhanced). Consult the W3C Quick Reference for the full inherited set.
+AAA also requires all applicable A and AA criteria. The AAA table above already
+includes 2.4.12 Focus Not Obscured (Enhanced), 2.4.13 Focus Appearance, and
+3.3.9 Accessible Authentication (Enhanced) — do not duplicate rows for those.
+Explicitly verify the remaining WCAG 2.2 additions that are A/AA level: 2.4.11
+Focus Not Obscured (Minimum), 2.5.7 Dragging Movements, 2.5.8 Target Size
+(Minimum), 3.2.6 Consistent Help, 3.3.7 Redundant Entry, and 3.3.8 Accessible
+Authentication (Minimum). Consult the W3C Quick Reference for the full
+inherited set.

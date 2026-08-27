@@ -52,7 +52,7 @@ The reproducible automated audit route requires Node.js, npm, Python 3, curl, Ja
 **Output Type(s):** Accessibility guidance, remediation recommendations and code, audit reports, evidence records, and benchmark results when explicitly requested.  
 **Output Format:** Markdown, source files, shell commands, JSON reports from axe/Pa11y/QualWeb/Nu, and an evidence-matrix table.  
 **Output Parameters:** Target route or HTTP URL, report directory, requested WCAG conformance level, relevant application states, and applicable success-criterion scope.  
-**Other Properties Related to Output:** The audit wrapper writes `axe_report.json`, `pa11y_report.json`, `qualweb_report.json`, `w3c_report.json`, and a fetched HTML snapshot to the chosen report directory. Agents must describe actual tested scope and residual limitations rather than make unsupported conformance claims.
+**Other Properties Related to Output:** The audit wrapper writes `axe_report.json`, `pa11y_report.json`, `qualweb_report.json`, `w3c_source_html_report.json` (raw-HTTP-response scope only, not the rendered DOM), and a fetched HTML snapshot to the chosen report directory. Agents must describe actual tested scope and residual limitations rather than make unsupported conformance claims.
 
 ## Skill Version
 

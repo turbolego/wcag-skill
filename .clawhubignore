@@ -5,3 +5,11 @@ README.md
 clawhub-source/
 tests/
 todo.md
+
+# Generated artifacts that must never ship in a release
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/

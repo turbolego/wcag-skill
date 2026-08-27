@@ -26,6 +26,13 @@ url="$1"
 out_dir="${2:-a11y-reports}"
 mkdir -p "$out_dir"
 
+# Prefer tools pinned in package.json (installed via `npm ci`) over anything
+# found elsewhere on PATH, for reproducible tool versions.
+repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -d "$repo_root/node_modules/.bin" ]]; then
+  PATH="$repo_root/node_modules/.bin:$PATH"
+fi
+
 for command in axe pa11y vnu curl node npm; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
@@ -41,7 +48,10 @@ driver_path="${AXE_CHROMEDRIVER_PATH:-$(command -v chromedriver || true)}"
 [[ -n "$chrome_path" ]] || { echo "Chrome/Chromium was not found." >&2; exit 69; }
 [[ -n "$driver_path" ]] || { echo "Chromedriver was not found." >&2; exit 69; }
 
-qualweb_cli="$(npm root -g)/@qualweb/cli/dist/cli.js"
+qualweb_cli="$repo_root/node_modules/@qualweb/cli/dist/cli.js"
+if [[ ! -f "$qualweb_cli" ]]; then
+  qualweb_cli="$(npm root -g)/@qualweb/cli/dist/cli.js"
+fi
 [[ -f "$qualweb_cli" ]] || { echo "@qualweb/cli was not found at $qualweb_cli" >&2; exit 69; }
 
 echo "Running axe..."
@@ -56,6 +66,6 @@ PUPPETEER_EXECUTABLE_PATH="$chrome_path" node "$qualweb_cli" -u "$url" -m act-ru
 echo "Running Nu HTML Checker..."
 html_file="$out_dir/fetched-page.html"
 curl --fail --location --silent --show-error "$url" > "$html_file"
-node "$(dirname "$0")/run-w3c-validator.mjs" "$html_file" "$out_dir/w3c_report.json"
+node "$(dirname "$0")/run-w3c-validator.mjs" "$html_file" "$out_dir/w3c_source_html_report.json" "$url"
 
 echo "Reports written to $out_dir"

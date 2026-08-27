@@ -6,12 +6,13 @@ flags from blog posts or old reports.
 
 ## Prerequisites
 
-Install the declared Node tools and a Chromium-family browser plus matching
-Chromedriver. `vnu-jar` needs Java.
+Install the pinned Node tools from [`package.json`](../package.json) and a
+Chromium-family browser plus matching Chromedriver. `vnu-jar` needs Java.
 
 ```bash
-npm i -g @axe-core/cli pa11y @qualweb/cli vnu-jar chromedriver
-# Install or provide Chrome/Chromium separately.
+npm ci
+# Install or provide Chrome/Chromium separately, matching the chromedriver
+# major version pinned in package.json.
 ```
 
 If the browser or driver is not detected, set both paths explicitly:
@@ -30,9 +31,15 @@ bash scripts/a11y-audit.sh http://localhost:8000 ./a11y-reports
 ```
 
 The wrapper writes `axe_report.json`, `pa11y_report.json`,
-`qualweb_report.json`, and `w3c_report.json`. It resolves QualWeb's actual
-installed entry point instead of assuming a `qualweb` executable, uses axe's
-supported `--stdout` option, and validates fetched HTML with the Nu checker.
+`qualweb_report.json`, and `w3c_source_html_report.json`. It resolves
+QualWeb's actual installed entry point instead of assuming a `qualweb`
+executable, uses axe's supported `--stdout` option, and validates fetched HTML
+with the Nu checker.
+
+`w3c_source_html_report.json` only validates the raw HTTP response body
+(`scope: "source-html"` in the report). It does not see DOM mutations from
+JavaScript, authenticated routes, or other post-load states — those require
+the browser-based tools (axe, Pa11y, QualWeb) run against each relevant state.
 
 ## Read results
 

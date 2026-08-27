@@ -41,10 +41,18 @@ openclaw skills install ./path/to/wcag-skill --as wcag-skill
 
 ## Prerequisites
 
+Tool versions are pinned in [`package.json`](package.json) and
+[`package-lock.json`](package-lock.json) for reproducible installs:
+
 ```bash
-npm i -g @axe-core/cli pa11y @qualweb/cli vnu-jar chromedriver
-# Install Chrome or Chromium separately. Chromedriver must match its major version.
+npm ci
+# Install Chrome or Chromium separately, matching the chromedriver
+# major version pinned in package.json.
 ```
+
+The audit wrapper looks for CLIs installed locally (`./node_modules/.bin`) or
+globally. Prefix commands with `npx` or add `./node_modules/.bin` to `PATH`
+if you installed locally.
 
 ## Audit a page
 

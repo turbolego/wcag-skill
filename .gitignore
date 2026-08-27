@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+a11y-reports/
+reports-good/
+reports-bad/

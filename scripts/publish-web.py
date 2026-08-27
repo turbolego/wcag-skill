@@ -47,6 +47,10 @@ def is_ignored(rel: str, patterns: list[str]) -> bool:
     return False
 
 
+GENERATED_DIRS = {"node_modules", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+GENERATED_FILE_SUFFIXES = (".pyc", ".pyo", ".pyd")
+
+
 def collect_files(root: Path) -> list[tuple[str, bytes]]:
     """Walk skill directory, apply .clawhubignore, return [(relpath, bytes)]."""
     files: list[tuple[str, bytes]] = []
@@ -57,11 +61,13 @@ def collect_files(root: Path) -> list[tuple[str, bytes]]:
             d
             for d in dirnames
             if not d.startswith(".")
-            and d != "node_modules"
+            and d not in GENERATED_DIRS
             and not is_ignored(str((current / d).relative_to(root)), ignored_patterns)
         ]
         for fn in sorted(filenames):
             if fn.startswith(".") and fn != ".clawhubignore":
+                continue
+            if fn.endswith(GENERATED_FILE_SUFFIXES):
                 continue
             abs_path = current / fn
             rel = str(abs_path.relative_to(root))
@@ -133,8 +139,10 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Print payload, skip upload")
     args = parser.parse_args()
 
-    token = get_token()
-    print(f"✓ Token present ({len(token)} chars)")
+    token = None
+    if not args.dry_run:
+        token = get_token()
+        print(f"✓ Token present ({len(token)} chars)")
 
     version = read_version(SKILL_DIR)
     print(f"✓ Version: {version}")
