@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
-"""Check benchmark tag coverage and tag balance.
+"""Check HTML5 tag coverage (against html_tags.json) and tag balance for WCAG pages.
 
 Usage:
-  python3 benchmark/scripts/check-tag-coverage.py <index.html> [html_tags.json]
+  python3 check-tag-coverage.py <index.html> [html_tags.json]
 
-Prints expected/used/missing tag counts and reports tag balance. The balance
-check implements the HTML5 "optional end tag" implied-closing rules (for
-option, li, dt/dd, tr/td/th, thead/tbody/tfoot, colgroup, and p) so that a
-legally omitted end tag does not cascade into false UNMATCHED/UNCLOSED
-reports for enclosing structural elements such as div/section/main/table.
+Prints expected/used/missing tag counts and reports unbalanced or unclosed tags.
+Implements HTML5 optional-end-tag implied-closing rules (option, li, dt/dd,
+tr/td/th, thead/tbody/tfoot, colgroup, p) so legally omitted end tags do not
+cascade into false UNMATCHED/UNCLOSED reports for structural elements.
 Exits nonzero if any tag is missing or a genuine structural mismatch exists.
 """
 
 import json
 import re
 import sys
-from pathlib import Path
 from html.parser import HTMLParser
+from pathlib import Path
 
 VOID = {
     "area", "base", "br", "col", "embed", "hr", "img", "input",
@@ -52,8 +51,6 @@ AUTO_CLOSE_ON_OPEN = {
     "tfoot": {"thead", "tbody", "tfoot"},
     "colgroup": {"colgroup"},
 }
-# Any flow-content element (including another <p>) implicitly closes an
-# open <p> left on top of the stack.
 for _closer in _P_CLOSERS:
     AUTO_CLOSE_ON_OPEN.setdefault(_closer, set()).add("p")
 
@@ -81,18 +78,18 @@ def check_balance(html):
             self.stray_end_tags = []
 
         def handle_starttag(self, tag, attrs):
+            if tag in VOID:
+                return
             closers = AUTO_CLOSE_ON_OPEN.get(tag)
             if closers:
                 while self.stack and self.stack[-1] in closers:
                     self.implied_closes.append((self.stack.pop(), tag, self.getpos()))
-            if tag not in VOID:
-                self.stack.append(tag)
+            self.stack.append(tag)
 
         def handle_endtag(self, tag):
             if tag in VOID:
                 return
             if tag not in self.stack:
-                # Already closed implicitly, or a stray/mismatched tag.
                 self.stray_end_tags.append((tag, self.getpos()))
                 return
             idx = len(self.stack) - 1 - self.stack[::-1].index(tag)
@@ -107,9 +104,6 @@ def check_balance(html):
     p = P()
     p.feed(html)
 
-    structural_unclosed = [t for t in p.stack if t not in OPTIONAL_END_TAGS]
-    optional_unclosed = [t for t in p.stack if t in OPTIONAL_END_TAGS]
-
     if p.implied_closes:
         print(f"INFO: {len(p.implied_closes)} optional end tag(s) legally omitted (implied close)")
     if p.stray_end_tags:
@@ -117,14 +111,18 @@ def check_balance(html):
             note = "optional-end-tag element" if tag in OPTIONAL_END_TAGS else "no matching open tag"
             print(f"INFO: stray </{tag}> at {pos} ({note})")
 
-    has_error = bool(p.mismatches or structural_unclosed)
+    has_error = bool(p.mismatches)
     for m in p.mismatches:
         print(m)
-    if optional_unclosed:
-        print("UNCLOSED (optional end tag, not an error):", optional_unclosed)
+
+    structural_unclosed = [t for t in p.stack if t not in OPTIONAL_END_TAGS]
+    optional_unclosed = [t for t in p.stack if t in OPTIONAL_END_TAGS]
     if structural_unclosed:
         print("UNCLOSED (structural mismatch):", structural_unclosed)
-    if not has_error:
+        has_error = True
+    if optional_unclosed:
+        print("UNCLOSED (optional end tag, not an error):", optional_unclosed)
+    if not has_error and not p.mismatches:
         print("Balance: OK")
     return has_error
 
@@ -135,7 +133,7 @@ def main():
         sys.exit(1)
     html_path = sys.argv[1]
     default_tags = Path(__file__).resolve().parent.parent / "resources" / "html_tags.json"
-    tags_path = sys.argv[2] if len(sys.argv) > 2 else default_tags
+    tags_path = sys.argv[2] if len(sys.argv) > 2 else str(default_tags)
     with open(html_path) as f:
         html = f.read()
     missing = check_coverage(html, tags_path)
@@ -145,4 +143,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

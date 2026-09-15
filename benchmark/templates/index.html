@@ -6,10 +6,9 @@
     __MODEL_NAME_ENC__ -> URL-encoded (spaces -> %20), e.g. DeepSeek%20V4%20Pro
     __RUN_FOLDER__     -> run folder name, e.g. DeepSeek V4 Pro-20260731-145624
   The CSS/script hrefs MUST stay absolute with %20 encoding — the harness injects
-  <base href="/AI-WCAG-Gauntlet/">, which silently breaks relative paths.
+  <base href="/AI-WCAG-Gauntlet/"> externally, which silently breaks relative paths.
   Also create scripts/dummy.js (any content) next to this file.
--->
-<html lang="en">
+--><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +17,9 @@
     <link rel="stylesheet" href="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/style.css">
     <script src="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/scripts/dummy.js"></script>
     <style>
-        nav a { min-width: 24px; min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px;
+        nav a { min-width: 24px; min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }
     </style>
+<script>window.alert=window.confirm=window.prompt=()=>null;</script>
 </head>
 <body>
     <header>
@@ -142,80 +142,80 @@
 
         <section id="contact" aria-labelledby="contact-heading">
             <h2 id="contact-heading">Contact Form</h2>
-                <form action="#contact" method="post" aria-label="Contact form">
-                    <fieldset>
-                        <legend>Personal Information</legend>
+            <form action="#contact" method="post" aria-label="Contact form">
+                <fieldset>
+                    <legend>Personal Information</legend>
 
-                        <div>
-                            <label for="name">Name:</label>
-                            <input type="text" id="name" name="name" required autocomplete="name" placeholder="Your full name">
-                        </div>
+                    <div>
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required autocomplete="name" placeholder="Your full name">
+                    </div>
 
-                        <div>
-                            <label for="email">Email:</label>
-                            <input type="email" id="email" name="email" required autocomplete="email" placeholder="your@email.com">
-                        </div>
+                    <div>
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required autocomplete="email" placeholder="your@email.com">
+                    </div>
 
-                        <div>
-                            <label for="website">Website:</label>
-                            <input type="url" id="website" name="website" placeholder="https://example.com">
-                        </div>
+                    <div>
+                        <label for="website">Website:</label>
+                        <input type="url" id="website" name="website" placeholder="https://example.com">
+                    </div>
 
-                        <div>
-                            <label for="birthdate">Birth Date:</label>
-                            <input type="date" id="birthdate" name="birthdate">
-                        </div>
+                    <div>
+                        <label for="birthdate">Birth Date:</label>
+                        <input type="date" id="birthdate" name="birthdate">
+                    </div>
 
-                        <div>
-                            <label for="color">Favorite Color:</label>
-                            <input type="color" id="color" name="color" value="#0000ff">
-                        </div>
-                    </fieldset>
+                    <div>
+                        <label for="color">Favorite Color:</label>
+                        <input type="color" id="color" name="color" value="#0000ff">
+                    </div>
+                </fieldset>
 
-                    <fieldset>
-                        <legend>Preferences</legend>
-                        <div>
-                            <label for="category">Category:</label>
-                            <select id="category" name="category" aria-label="Select category">
-                                <option value="">Choose an option</option>
-                                <optgroup label="Technology">
-                                    <option value="web">Web Development</option>
-                                    <option value="mobile">Mobile App</option>
-                                </optgroup>
-                                <optgroup label="Design">
-                                    <option value="ux">UX Design</option>
-                                    <option value="visual">Visual Design</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="rating">Rating:</label>
-                            <input type="range" id="rating" name="rating" min="0" max="10" value="5" aria-label="Rating slider">
-                            <output for="rating">5</output>
-                            <meter min="0" max="10" value="5" aria-label="Rating meter">5 out of 10</meter>
-                        </div>
+                <fieldset>
+                    <legend>Preferences</legend>
+                    <div>
+                        <label for="category">Category:</label>
+                        <select id="category" name="category" aria-label="Select category">
+                            <option value="">Choose an option</option>
+                            <optgroup label="Technology">
+                                <option value="web">Web Development</option>
+                                <option value="mobile">Mobile App</option>
+                            </optgroup>
+                            <optgroup label="Design">
+                                <option value="ux">UX Design</option>
+                                <option value="visual">Visual Design</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rating">Rating:</label>
+                        <input type="range" id="rating" name="rating" min="0" max="10" value="5" aria-label="Rating slider">
+                        <output for="rating">5</output>
+                        <meter min="0" max="10" value="5" aria-label="Rating meter">5 out of 10</meter>
+                    </div>
 
-                        <div>
-                            <label><input type="checkbox" name="newsletter" checked> Subscribe to newsletter</label>
-                        </div>
-                        <div>
-                            <label><input type="radio" name="contact_method" value="email" checked> Contact by email</label>
-                            <label><input type="radio" name="contact_method" value="phone"> Contact by phone</label>
-                        </div>
-                        <div>
-                            <input type="search" id="search" name="search" placeholder="Search terms..." aria-label="Search">
-                        </div>
-                    </fieldset>
+                    <div>
+                        <label><input type="checkbox" name="newsletter" checked> Subscribe to newsletter</label>
+                    </div>
+                    <div>
+                        <label><input type="radio" name="contact_method" value="email" checked> Contact by email</label>
+                        <label><input type="radio" name="contact_method" value="phone"> Contact by phone</label>
+                    </div>
+                    <div>
+                        <input type="search" id="search" name="search" placeholder="Search terms..." aria-label="Search">
+                    </div>
+                </fieldset>
 
-                    <fieldset>
-                        <legend>Your Message</legend>
-                        <label for="message">Message:</label>
-                        <textarea id="message" name="message" rows="4" placeholder="Type your message here..." minlength="10" maxlength="500"></textarea>
-                    </fieldset>
+                <fieldset>
+                    <legend>Your Message</legend>
+                    <label for="message">Message:</label>
+                    <textarea id="message" name="message" rows="4" placeholder="Type your message here..." minlength="10" maxlength="500"></textarea>
+                </fieldset>
 
-                    <button type="submit">Send Message</button>
-                    <button type="reset">Reset</button>
-                    <input type="image" src="resources/250px-Ordnance_survey_benchmark_Pinhead_icon.svg.png" alt="Submit form as image" width="40" height="40" aria-label="Submit form">
+                <button type="submit">Send Message</button>
+                <button type="reset">Reset</button>
+                <input type="image" src="resources/250px-Ordnance_survey_benchmark_Pinhead_icon.svg.png" alt="Submit form as image" width="40" height="40" aria-label="Submit form">
             </form>
         </section>
 
