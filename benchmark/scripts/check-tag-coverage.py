@@ -131,18 +131,14 @@ def check_balance(html):
                 return
             self.stack.append(tag)
 
+        def handle_startendtag(self, tag, attrs):
+            self.handle_starttag(tag, attrs)
+            if tag not in VOID:
+                self.handle_endtag(tag)
+
         def handle_endtag(self, tag):
-            # Void elements must never appear as explicit end tags in
-            # valid HTML. Treat </img>, </hr>, etc. as stray end tags so
-            # malformed markup is flagged, not silently ignored.
             if tag in VOID:
-                # Only flag if there is no matching void start on the stack
-                # (HTMLParser normalizes self-closing void tags, so any
-                # explicit </void> is unexpected).
-                if tag in self.stack:
-                    self.stack.remove(tag)
-                else:
-                    self.stray_end_tags.append((tag, self.getpos()))
+                self.stray_end_tags.append((tag, self.getpos()))
                 return
             if tag not in self.stack:
                 # No matching open tag. A stray end tag is always a parse
