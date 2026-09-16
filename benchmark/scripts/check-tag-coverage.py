@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Check HTML5 tag coverage (against html_tags.json) and tag balance for WCAG pages.
 
-Usage:
-  python3 check-tag-coverage.py <index.html> [html_tags.json]
+Usage (from the repository root):
+  python3 benchmark/scripts/check-tag-coverage.py <index.html> [html_tags.json]
 
 Prints expected/used/missing tag counts and reports unbalanced or unclosed tags.
 Implements HTML5 optional-end-tag implied-closing rules (option, li, dt/dd,
 tr/td/th, thead/tbody/tfoot, colgroup, p) so legally omitted end tags do not
 cascade into false UNMATCHED/UNCLOSED reports for structural elements.
-Exits nonzero if any tag is missing or a genuine structural mismatch exists.
+HTML comments are stripped before counting, so commented-out tag literals do not
+count toward coverage. Exits nonzero if any tag is missing or a genuine structural
+mismatch exists.
 """
 
 import json
@@ -56,13 +58,19 @@ AUTO_CLOSE_ON_OPEN = {
 for _closer in _P_CLOSERS:
     AUTO_CLOSE_ON_OPEN.setdefault(_closer, set()).add("p")
 
+# Strip HTML comments so commented tag literals never count toward coverage.
+_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"
+
+
+def strip_comments(html):
+    return _COMMENT_RE.sub("", html)
 
 
 def check_coverage(html, tags_path):
     with open(tags_path) as f:
         expected = set(json.load(f)["tags"])
-    used = set(t.lower() for t in re.findall(TAG_RE, html))
+    used = set(t.lower() for t in re.findall(TAG_RE, strip_comments(html)))
     missing = sorted(expected - used)
     print(f"Expected: {len(expected)}  Used: {len(used)}  Missing: {len(missing)}")
     if missing:
@@ -76,6 +84,7 @@ def check_balance(html):
             super().__init__()
             self.stack = []
             self.implied_closes = []
+            self.implied_count = {}
             self.mismatches = []
             self.stray_end_tags = []
 
@@ -86,7 +95,9 @@ def check_balance(html):
             closers = AUTO_CLOSE_ON_OPEN.get(tag)
             if closers:
                 while self.stack and self.stack[-1] in closers:
-                    self.implied_closes.append((self.stack.pop(), tag, self.getpos()))
+                    closed = self.stack.pop()
+                    self.implied_closes.append((closed, tag, self.getpos()))
+                    self.implied_count[closed] = self.implied_count.get(closed, 0) + 1
             if tag in VOID:
                 return
             self.stack.append(tag)
@@ -95,11 +106,18 @@ def check_balance(html):
             if tag in VOID:
                 return
             if tag not in self.stack:
-                # No matching open tag. A missing optional-end-tag element was
-                # already implicitly closed in HTML5 parsing, so it is only
-                # informational; any other stray end tag is a real error.
-                note = "optional-end-tag element" if tag in OPTIONAL_END_TAGS else "no matching open tag"
-                self.stray_end_tags.append((tag, self.getpos(), note))
+                # No matching open tag. Downgrade to informational ONLY if this
+                # optional-end-tag element was actually implicitly closed earlier
+                # in the document (tracked in implied_count); any other stray
+                # end tag is a real error.
+                if (
+                    tag in OPTIONAL_END_TAGS
+                    and self.implied_count.get(tag, 0) > 0
+                ):
+                    self.implied_count[tag] -= 1
+                    self.stray_end_tags.append((tag, self.getpos(), "optional-end-tag element, implicitly closed"))
+                else:
+                    self.stray_end_tags.append((tag, self.getpos(), "no matching open tag"))
                 return
             idx = len(self.stack) - 1 - self.stack[::-1].index(tag)
             while len(self.stack) - 1 > idx:
@@ -116,13 +134,16 @@ def check_balance(html):
     if p.implied_closes:
         print(f"INFO: {len(p.implied_closes)} optional end tag(s) legally omitted (implied close)")
     for tag, pos, note in p.stray_end_tags:
-        # Non-optional stray end tags are errors; optional-end-tag strays that
-        # were implicitly closed are informational.
-        severity = "INFO" if tag in OPTIONAL_END_TAGS else "ERROR"
+        # Stray end tags with no matching (or implicitly-closed) open tag are
+        # errors; only a stray optional-end-tag element that was truly
+        # implicitly closed earlier is informational.
+        is_error = not (tag in OPTIONAL_END_TAGS and note.startswith("optional-end-tag element, implicitly closed"))
+        severity = "ERROR" if is_error else "INFO"
         print(f"{severity}: stray </{tag}> at {pos} ({note})")
 
     has_error = bool(p.mismatches) or any(
-        tag not in OPTIONAL_END_TAGS for tag, _, _ in p.stray_end_tags
+        not (tag in OPTIONAL_END_TAGS and note.startswith("optional-end-tag element, implicitly closed"))
+        for tag, _, note in p.stray_end_tags
     )
     for m in p.mismatches:
         print(m)

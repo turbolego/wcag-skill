@@ -7,8 +7,8 @@
     __RUN_FOLDER__     -> run folder name, e.g. DeepSeek V4 Pro-20260731-145624
   The CSS/script hrefs use absolute %20-encoded paths (the harness injects its
   own base element for the gauntlet repo, so relative paths would silently break).
-  A real base element is kept here because html_tags.json requires <base> coverage;
-  it points at the repo root and all hrefs are absolute, so it has no adverse effect.
+  A real base element is kept in <head> because html_tags.json requires base
+  coverage; all hrefs here are absolute, so it does not conflict with the harness.
   Also create scripts/dummy.js (any content) next to this file.
 --><html lang="en">
 <head>

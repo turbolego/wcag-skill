@@ -39,11 +39,11 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
    the literal string.
 3. target-size fix: `nav a { min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }`
    (min-height is the critical part; inline style in `<head>` also works).
-4. Tag coverage: `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
-   then set-diff against `resources/html_tags.json` (113 tags including
-   `selectedcontent`). NOTE: the checker greps the raw document, so a literal
-   `<base ...>` inside an HTML comment still counts as "used" — keep commented
-   base references out of template markup.
+4. Tag coverage: HTML comments are stripped first (`re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)`), then `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
+   set-diff'd against `benchmark/resources/html_tags.json` (113 tags including
+   `selectedcontent`). Because comments are stripped, commented tag literals do
+   NOT count toward coverage — always use a real element for the tags the resource
+   requires (e.g. `<base>`).
 5. Keep `<section>` nesting closed — every open section needs its `</section>` before
    `<main>` closes; nested sections must be explicitly terminated.
 
