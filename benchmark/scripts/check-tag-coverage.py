@@ -30,18 +30,19 @@ OPTIONAL_END_TAGS = {
     "thead", "tbody", "tfoot", "colgroup", "p", "rt", "rp",
 }
 
+# Tags that, when opened, implicitly close a given tag left open at the top
+# of the stack (the HTML5 parser's implied end-tag behaviour).
+# Includes void elements: e.g. an open <p> is implicitly closed by a
+# following <hr>, <address>, <div>, etc. hgroup is added because an open
+# <p> is implicitly closed by a following <h1>–<h6>/<hgroup>.
+# rt/rp close a preceding rt so that <ruby><rt>one<rt>two</ruby> parses cleanly.
 _P_CLOSERS = {
     "address", "article", "aside", "blockquote", "details", "div", "dl",
     "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
     "h4", "h5", "h6", "header", "hr", "main", "menu", "nav", "ol", "p",
-    "pre", "section", "table", "ul",
+    "pre", "section", "table", "ul", "hgroup",
 }
 
-# Tags that, when opened, implicitly close a given tag left open at the top
-# of the stack (the HTML5 parser's implied end-tag behaviour). Note this
-# includes void elements: e.g. an open <p> is implicitly closed by a following
-# <hr>, <address>, <div>, etc. rt/rp close a preceding rt so that
-# <ruby><rt>one<rt>two</ruby> parses cleanly.
 AUTO_CLOSE_ON_OPEN = {
     "li": {"li"},
     "option": {"option"},
@@ -61,13 +62,41 @@ AUTO_CLOSE_ON_OPEN = {
 for _closer in _P_CLOSERS:
     AUTO_CLOSE_ON_OPEN.setdefault(_closer, set()).add("p")
 
-# Strip HTML comments so commented tag literals never count toward coverage.
-_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"
 
 
 def strip_comments(html):
-    return _COMMENT_RE.sub("", html)
+    """Strip HTML comments while respecting quoted attribute values.
+
+    A raw regex r'<!--.*?-->' treats <!-- inside quoted attribute
+    values (e.g. data-value=\"<!--\") as a comment start, which can
+    destroy legitimate content. This scanner tracks quote state so
+    <!-- only starts a comment outside attribute values.
+    """
+    result = []
+    i = 0
+    in_single_quote = False
+    in_double_quote = False
+    while i < len(html):
+        ch = html[i]
+        if ch == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+            result.append(ch)
+            i += 1
+        elif ch == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+            result.append(ch)
+            i += 1
+        elif i + 3 < len(html) and html[i:i+4] == '<!--' and not in_single_quote and not in_double_quote:
+            end = html.find('-->', i + 4)
+            if end == -1:
+                result.append(html[i:])
+                break
+            i = end + 3
+        else:
+            result.append(ch)
+            i += 1
+    return ''.join(result)
 
 
 def check_coverage(html, tags_path):
@@ -103,14 +132,24 @@ def check_balance(html):
             self.stack.append(tag)
 
         def handle_endtag(self, tag):
+            # Void elements must never appear as explicit end tags in
+            # valid HTML. Treat </img>, </hr>, etc. as stray end tags so
+            # malformed markup is flagged, not silently ignored.
             if tag in VOID:
+                # Only flag if there is no matching void start on the stack
+                # (HTMLParser normalizes self-closing void tags, so any
+                # explicit </void> is unexpected).
+                if tag in self.stack:
+                    self.stack.remove(tag)
+                else:
+                    self.stray_end_tags.append((tag, self.getpos()))
                 return
             if tag not in self.stack:
-                # No matching open tag. A stray end tag is always a parse error,
-                # even for optional-end-tag elements: an element that was
-                # implicitly closed (popped by AUTO_CLOSE_ON_OPEN) cannot be
-                # "closed again" by a later explicit end tag. Only the
-                # implied closes recorded in handle_starttag are legal.
+                # No matching open tag. A stray end tag is always a parse
+                # error: an element implicitly closed (popped by
+                # AUTO_CLOSE_ON_OPEN) cannot be "closed again" by a later
+                # explicit end tag. Only the implied closes recorded in
+                # handle_starttag are legal.
                 self.stray_end_tags.append((tag, self.getpos()))
                 return
             idx = len(self.stack) - 1 - self.stack[::-1].index(tag)
