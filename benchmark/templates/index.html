@@ -5,8 +5,10 @@
     __MODEL_NAME__     -> display name, e.g. DeepSeek V4 Pro
     __MODEL_NAME_ENC__ -> URL-encoded (spaces -> %20), e.g. DeepSeek%20V4%20Pro
     __RUN_FOLDER__     -> run folder name, e.g. DeepSeek V4 Pro-20260731-145624
-  The CSS/script hrefs MUST stay absolute with %20 encoding — the harness injects
-  <base href="/AI-WCAG-Gauntlet/"> externally, which silently breaks relative paths.
+  The CSS/script hrefs use absolute %20-encoded paths (the harness injects its
+  own base element for the gauntlet repo, so relative paths would silently break).
+  A real base element is kept here because html_tags.json requires <base> coverage;
+  it points at the repo root and all hrefs are absolute, so it has no adverse effect.
   Also create scripts/dummy.js (any content) next to this file.
 --><html lang="en">
 <head>
@@ -14,6 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI WCAG Gauntlet — Benchmark</title>
     <meta name="description" content="Accessibility benchmark page for AI WCAG Gauntlet">
+    <base href="/AI-WCAG-Gauntlet/">
     <link rel="stylesheet" href="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/style.css">
     <script src="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/scripts/dummy.js"></script>
     <style>
@@ -242,7 +245,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th scope="col">Average</th>
+                            <th scope="row">Average</th>
                             <td>—</td>
                         </tr>
                     </tfoot>

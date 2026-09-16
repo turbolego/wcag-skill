@@ -39,8 +39,11 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
    the literal string.
 3. target-size fix: `nav a { min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }`
    (min-height is the critical part; inline style in `<head>` also works).
-4. Tag coverage: `re.findall(r"<\s*([a-zA-Z][a-zA-Z0-9\-]*\\b)", html)` then set-diff
-   against `resources/html_tags.json` (107 tags including `selectedcontent`).
+4. Tag coverage: `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
+   then set-diff against `resources/html_tags.json` (113 tags including
+   `selectedcontent`). NOTE: the checker greps the raw document, so a literal
+   `<base ...>` inside an HTML comment still counts as "used" — keep commented
+   base references out of template markup.
 5. Keep `<section>` nesting closed — every open section needs its `</section>` before
    `<main>` closes; nested sections must be explicitly terminated.
 
@@ -51,13 +54,18 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
   at `~/.cache/puppeteer/chrome/linux-<ver>/chrome-linux64/chrome`; chromedriver v150
   matched system Chrome 150.
 
-## Run 2 — fast-path template (2 iterations, SCORE 191.80)
+## Run 2 — fast-path template (2 iterations, SCORE 191.80) — INVALID RESULT
 - Used the known-good template from `templates/` instead of setup.sh's bare starter.
-- Iteration 1: full page with all 107 tags, proper landmarks, absolute CSS paths
+  This is **reference material only** (see `benchmark/README.md`): copying it into a
+  benchmark submission measures no model behavior, so it is NOT a valid benchmark run.
+  Treat it strictly as a local smoke test of the validators, not a model score.
+- Iteration 1: full page with all 107/113 tags, proper landmarks, absolute CSS paths
   → FAIL (scored 12.50 due to stale axe report from the starter page).
 - Iteration 2: PASS with 0 errors across all 5 validators, SCORE 191.80 (max).
-- Key insight: **always copy the template** — avoids the wasted first iteration where the
-  bare starter fails on 107 tags + 2 axe violations. Saves 4-5 iterations vs from scratch.
+- Key insight: **the template is only a validator smoke-test shortcut** — it avoids
+  wasted iterations where the bare starter fails on 107 missing tags + 2 axe
+  violations, saving 4-5 iterations, but a real benchmark must still write original
+  markup tailored to its prompt.
 - New pitfall: `test-suite.sh` starts its own HTTP server — `curl` returning
   exit 7 between runs just means the server is down, not a broken path. Don't manually
   `curl` to verify the CSS url during the run.

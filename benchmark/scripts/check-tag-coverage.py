@@ -36,7 +36,9 @@ _P_CLOSERS = {
 }
 
 # Tags that, when opened, implicitly close a given tag left open at the top
-# of the stack (the HTML5 parser's implied end-tag behaviour).
+# of the stack (the HTML5 parser's implied end-tag behaviour). Note this
+# includes void elements: e.g. an open <p> is implicitly closed by a following
+# <hr>, <address>, <div>, etc.
 AUTO_CLOSE_ON_OPEN = {
     "li": {"li"},
     "option": {"option"},
@@ -78,19 +80,26 @@ def check_balance(html):
             self.stray_end_tags = []
 
         def handle_starttag(self, tag, attrs):
-            if tag in VOID:
-                return
+            # Apply implied-close rules BEFORE the void check, so a void
+            # element that closes an open optional-end-tag element (e.g. <hr>
+            # closing an open <p>) is still recorded.
             closers = AUTO_CLOSE_ON_OPEN.get(tag)
             if closers:
                 while self.stack and self.stack[-1] in closers:
                     self.implied_closes.append((self.stack.pop(), tag, self.getpos()))
+            if tag in VOID:
+                return
             self.stack.append(tag)
 
         def handle_endtag(self, tag):
             if tag in VOID:
                 return
             if tag not in self.stack:
-                self.stray_end_tags.append((tag, self.getpos()))
+                # No matching open tag. A missing optional-end-tag element was
+                # already implicitly closed in HTML5 parsing, so it is only
+                # informational; any other stray end tag is a real error.
+                note = "optional-end-tag element" if tag in OPTIONAL_END_TAGS else "no matching open tag"
+                self.stray_end_tags.append((tag, self.getpos(), note))
                 return
             idx = len(self.stack) - 1 - self.stack[::-1].index(tag)
             while len(self.stack) - 1 > idx:
@@ -106,12 +115,15 @@ def check_balance(html):
 
     if p.implied_closes:
         print(f"INFO: {len(p.implied_closes)} optional end tag(s) legally omitted (implied close)")
-    if p.stray_end_tags:
-        for tag, pos in p.stray_end_tags:
-            note = "optional-end-tag element" if tag in OPTIONAL_END_TAGS else "no matching open tag"
-            print(f"INFO: stray </{tag}> at {pos} ({note})")
+    for tag, pos, note in p.stray_end_tags:
+        # Non-optional stray end tags are errors; optional-end-tag strays that
+        # were implicitly closed are informational.
+        severity = "INFO" if tag in OPTIONAL_END_TAGS else "ERROR"
+        print(f"{severity}: stray </{tag}> at {pos} ({note})")
 
-    has_error = bool(p.mismatches)
+    has_error = bool(p.mismatches) or any(
+        tag not in OPTIONAL_END_TAGS for tag, _, _ in p.stray_end_tags
+    )
     for m in p.mismatches:
         print(m)
 
@@ -122,7 +134,7 @@ def check_balance(html):
         has_error = True
     if optional_unclosed:
         print("UNCLOSED (optional end tag, not an error):", optional_unclosed)
-    if not has_error and not p.mismatches:
+    if not has_error:
         print("Balance: OK")
     return has_error
 
