@@ -42,8 +42,9 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
 4. Tag coverage: HTML comments are stripped first (`re.sub(r"<!--.*?-->", "", html, flags=re.DOTALL)`), then `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
    set-diff'd against `benchmark/resources/html_tags.json` (113 tags including
    `selectedcontent`). Because comments are stripped, commented tag literals do
-   NOT count toward coverage — always use a real element for the tags the resource
-   requires (e.g. `<base>`).
+   NOT count toward coverage — always use a real element for required tags
+   (e.g. a bare `<base>` with no href for base coverage, so it does not rewrite
+   relative URLs).
 5. Keep `<section>` nesting closed — every open section needs its `</section>` before
    `<main>` closes; nested sections must be explicitly terminated.
 

@@ -6,8 +6,8 @@ Usage (from the repository root):
 
 Prints expected/used/missing tag counts and reports unbalanced or unclosed tags.
 Implements HTML5 optional-end-tag implied-closing rules (option, li, dt/dd,
-tr/td/th, thead/tbody/tfoot, colgroup, p) so legally omitted end tags do not
-cascade into false UNMATCHED/UNCLOSED reports for structural elements.
+tr/td/th, thead/tbody/tfoot, colgroup, p, rt/rp) so legally omitted end tags do
+not cascade into false UNMATCHED/UNCLOSED reports for structural elements.
 HTML comments are stripped before counting, so commented-out tag literals do not
 count toward coverage. Exits nonzero if any tag is missing or a genuine structural
 mismatch exists.
@@ -27,7 +27,7 @@ VOID = {
 # Elements whose end tag may be legally omitted (HTML5 §13.1.2).
 OPTIONAL_END_TAGS = {
     "option", "optgroup", "li", "dt", "dd", "tr", "td", "th",
-    "thead", "tbody", "tfoot", "colgroup", "p",
+    "thead", "tbody", "tfoot", "colgroup", "p", "rt", "rp",
 }
 
 _P_CLOSERS = {
@@ -40,7 +40,8 @@ _P_CLOSERS = {
 # Tags that, when opened, implicitly close a given tag left open at the top
 # of the stack (the HTML5 parser's implied end-tag behaviour). Note this
 # includes void elements: e.g. an open <p> is implicitly closed by a following
-# <hr>, <address>, <div>, etc.
+# <hr>, <address>, <div>, etc. rt/rp close a preceding rt so that
+# <ruby><rt>one<rt>two</ruby> parses cleanly.
 AUTO_CLOSE_ON_OPEN = {
     "li": {"li"},
     "option": {"option"},
@@ -54,6 +55,8 @@ AUTO_CLOSE_ON_OPEN = {
     "tbody": {"thead", "tbody", "tfoot"},
     "tfoot": {"thead", "tbody", "tfoot"},
     "colgroup": {"colgroup"},
+    "rt": {"rt"},
+    "rp": {"rt", "rp"},
 }
 for _closer in _P_CLOSERS:
     AUTO_CLOSE_ON_OPEN.setdefault(_closer, set()).add("p")
@@ -84,7 +87,6 @@ def check_balance(html):
             super().__init__()
             self.stack = []
             self.implied_closes = []
-            self.implied_count = {}
             self.mismatches = []
             self.stray_end_tags = []
 
@@ -95,9 +97,7 @@ def check_balance(html):
             closers = AUTO_CLOSE_ON_OPEN.get(tag)
             if closers:
                 while self.stack and self.stack[-1] in closers:
-                    closed = self.stack.pop()
-                    self.implied_closes.append((closed, tag, self.getpos()))
-                    self.implied_count[closed] = self.implied_count.get(closed, 0) + 1
+                    self.implied_closes.append((self.stack.pop(), tag, self.getpos()))
             if tag in VOID:
                 return
             self.stack.append(tag)
@@ -106,18 +106,12 @@ def check_balance(html):
             if tag in VOID:
                 return
             if tag not in self.stack:
-                # No matching open tag. Downgrade to informational ONLY if this
-                # optional-end-tag element was actually implicitly closed earlier
-                # in the document (tracked in implied_count); any other stray
-                # end tag is a real error.
-                if (
-                    tag in OPTIONAL_END_TAGS
-                    and self.implied_count.get(tag, 0) > 0
-                ):
-                    self.implied_count[tag] -= 1
-                    self.stray_end_tags.append((tag, self.getpos(), "optional-end-tag element, implicitly closed"))
-                else:
-                    self.stray_end_tags.append((tag, self.getpos(), "no matching open tag"))
+                # No matching open tag. A stray end tag is always a parse error,
+                # even for optional-end-tag elements: an element that was
+                # implicitly closed (popped by AUTO_CLOSE_ON_OPEN) cannot be
+                # "closed again" by a later explicit end tag. Only the
+                # implied closes recorded in handle_starttag are legal.
+                self.stray_end_tags.append((tag, self.getpos()))
                 return
             idx = len(self.stack) - 1 - self.stack[::-1].index(tag)
             while len(self.stack) - 1 > idx:
@@ -133,18 +127,10 @@ def check_balance(html):
 
     if p.implied_closes:
         print(f"INFO: {len(p.implied_closes)} optional end tag(s) legally omitted (implied close)")
-    for tag, pos, note in p.stray_end_tags:
-        # Stray end tags with no matching (or implicitly-closed) open tag are
-        # errors; only a stray optional-end-tag element that was truly
-        # implicitly closed earlier is informational.
-        is_error = not (tag in OPTIONAL_END_TAGS and note.startswith("optional-end-tag element, implicitly closed"))
-        severity = "ERROR" if is_error else "INFO"
-        print(f"{severity}: stray </{tag}> at {pos} ({note})")
+    for tag, pos in p.stray_end_tags:
+        print(f"ERROR: stray </{tag}> at {pos} (no matching open tag)")
 
-    has_error = bool(p.mismatches) or any(
-        not (tag in OPTIONAL_END_TAGS and note.startswith("optional-end-tag element, implicitly closed"))
-        for tag, _, note in p.stray_end_tags
-    )
+    has_error = bool(p.mismatches) or bool(p.stray_end_tags)
     for m in p.mismatches:
         print(m)
 
