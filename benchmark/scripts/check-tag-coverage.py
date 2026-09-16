@@ -40,7 +40,7 @@ _P_CLOSERS = {
     "address", "article", "aside", "blockquote", "details", "div", "dl",
     "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
     "h4", "h5", "h6", "header", "hr", "main", "menu", "nav", "ol", "p",
-    "pre", "section", "table", "ul", "hgroup",
+    "pre", "section", "table", "ul", "hgroup", "search",
 }
 
 AUTO_CLOSE_ON_OPEN = {
@@ -56,7 +56,7 @@ AUTO_CLOSE_ON_OPEN = {
     "tbody": {"thead", "tbody", "tfoot"},
     "tfoot": {"thead", "tbody", "tfoot"},
     "colgroup": {"colgroup"},
-    "rt": {"rt"},
+    "rt": {"rt", "rp"},
     "rp": {"rt", "rp"},
 }
 for _closer in _P_CLOSERS:
@@ -71,26 +71,40 @@ def strip_comments(html):
     A raw regex r'<!--.*?-->' treats <!-- inside quoted attribute
     values (e.g. data-value=\"<!--\") as a comment start, which can
     destroy legitimate content. This scanner tracks quote state so
-    <!-- only starts a comment outside attribute values.
+    that <!-- only starts a comment outside attribute values.
+    Quote tracking resets when a start tag opens and after the
+    start tag closes, so normal text such as "It's …" does not
+    leave quote flags set across the rest of the document.
     """
     result = []
     i = 0
     in_single_quote = False
     in_double_quote = False
+    in_tag = False
     while i < len(html):
         ch = html[i]
-        if ch == '"' and not in_single_quote:
+        if ch == '<' and i + 1 < len(html) and html[i + 1].isalpha():
+            in_tag = True
+            result.append(ch)
+            i += 1
+        elif ch == '>' and in_tag:
+            in_tag = False
+            result.append(ch)
+            i += 1
+        elif in_tag and ch == '"' and not in_single_quote:
             in_double_quote = not in_double_quote
             result.append(ch)
             i += 1
-        elif ch == "'" and not in_double_quote:
+        elif in_tag and ch == "'" and not in_double_quote:
             in_single_quote = not in_single_quote
             result.append(ch)
             i += 1
         elif i + 3 < len(html) and html[i:i+4] == '<!--' and not in_single_quote and not in_double_quote:
             end = html.find('-->', i + 4)
             if end == -1:
-                result.append(html[i:])
+                # Unterminated comment — tag literals after this point are
+                # still inside the comment, so they must NOT count toward
+                # coverage. Discard the remainder.
                 break
             i = end + 3
         else:

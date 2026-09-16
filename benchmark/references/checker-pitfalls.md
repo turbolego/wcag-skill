@@ -5,7 +5,7 @@ All cases are verified against `benchmark/resources/html_tags.json` (113 tags).
 
 ## HTML comments do not count toward coverage
 
-`check_tag_coverage` strips HTML comments (`<!-- ... -->`) before running
+`check_coverage` strips HTML comments (`<!-- ... -->`) before running
 `TAG_RE` against the document. A commented-out `<base>` literal does NOT
 count as base coverage. **Always use a real element** for tags required by
 `html_tags.json` — a bare `<base>` (no href) satisfies the tag requirement
@@ -51,5 +51,11 @@ summary row like "Average", `scope="row"` is semantically correct.
 The AI-WCAG-Gauntlet harness injects `<base href="/AI-WCAG-Gauntlet/">`
 into benchmark pages. A benchmark template should NOT include its own
 `<base href=...>` (duplicate base elements cause the first to control
-relative URLs). Use a bare `<base>` (no href) solely for tag-coverage
-compliance, or rely on the harness-injected base for URL resolution.
+relative URLs). Use a conforming bare `<base>` (no href) solely for tag-coverage
+compliance; for URL resolution, rely on the harness-injected
+`<base href="/AI-WCAG-Gauntlet/">`. Add `target="_self"` (which does not
+change URL resolution) to satisfy W3C conformance without triggering a
+rewrite:
+```
+    <base target="_self">
+```
