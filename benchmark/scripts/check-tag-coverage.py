@@ -69,33 +69,60 @@ def strip_comments(html):
     """Strip HTML comments while respecting quoted attribute values.
 
     A raw regex r'<!--.*?-->' treats <!-- inside quoted attribute
-    values (e.g. data-value=\"<!--\") as a comment start, which can
+    values (e.g. data-value=\\\"<!--\\\") as a comment start, which can
     destroy legitimate content. This scanner tracks quote state so
     <!-- only starts a comment outside attribute values.
+
+    Quote tracking is scoped to tag attributes only, and disabled
+    inside HTML comments. This avoids false negatives from apostrophes
+    in text content like "It's <!-- <base> -->" leaving the comment
+    unstripped and falsely counting <base> toward coverage.
     """
     result = []
     i = 0
     in_single_quote = False
     in_double_quote = False
+    in_comment = False
+    in_tag = False
     while i < len(html):
         ch = html[i]
-        if ch == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
+        if in_comment:
+            if i + 2 < len(html) and html[i:i+3] == '-->':
+                in_comment = False
+                i += 3
+                continue
+            i += 1
+            continue
+        if ch == '<':
+            if not in_single_quote and not in_double_quote:
+                if i + 3 < len(html) and html[i:i+4] == '<!--':
+                    in_comment = True
+                    i += 4
+                    continue
+            in_tag = True
+            in_single_quote = False
+            in_double_quote = False
             result.append(ch)
             i += 1
-        elif ch == "'" and not in_double_quote:
-            in_single_quote = not in_single_quote
+            continue
+        if ch == '>' and in_tag:
+            in_tag = False
             result.append(ch)
             i += 1
-        elif i + 3 < len(html) and html[i:i+4] == '<!--' and not in_single_quote and not in_double_quote:
-            end = html.find('-->', i + 4)
-            if end == -1:
-                result.append(html[i:])
-                break
-            i = end + 3
-        else:
-            result.append(ch)
-            i += 1
+            continue
+        if in_tag:
+            if ch == '"' and not in_single_quote:
+                in_double_quote = not in_double_quote
+                result.append(ch)
+                i += 1
+                continue
+            elif ch == "'" and not in_double_quote:
+                in_single_quote = not in_single_quote
+                result.append(ch)
+                i += 1
+                continue
+        result.append(ch)
+        i += 1
     return ''.join(result)
 
 
