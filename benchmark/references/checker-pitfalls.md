@@ -3,7 +3,7 @@
 Edge cases that trip up `check-tag-coverage.py` and tag-balance logic.
 All cases are verified against `benchmark/resources/html_tags.json` (113 tags).
 
-## HTML comments count toward coverage
+## HTML comments do not count toward coverage
 
 `check_tag_coverage` strips HTML comments (`<!-- ... -->`) before running
 `TAG_RE` against the document. A commented-out `<base>` literal does NOT
