@@ -99,9 +99,13 @@ def strip_comments(html):
                     in_comment = True
                     i += 4
                     continue
-            in_tag = True
-            in_single_quote = False
-            in_double_quote = False
+                in_tag = True
+                in_single_quote = False
+                in_double_quote = False
+                result.append(ch)
+                i += 1
+                continue
+            # Inside quotes, '<' has no special meaning - just append it
             result.append(ch)
             i += 1
             continue
