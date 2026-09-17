@@ -39,10 +39,10 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
    the literal string.
 3. target-size fix: `nav a { min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }`
    (min-height is the critical part; inline style in `<head>` also works).
-4. Tag coverage: HTML comments are stripped using the parser (see strip_comments()) before `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
+4. Tag coverage: HTML comments are stripped by a custom scanner (see strip_comments()) before `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,
    set-diff'd against `benchmark/resources/html_tags.json` (113 tags including
-   `selectedcontent`). The parser-based stripper avoids regex false
-   positives on attribute values containing `<!--`. Because comments
+   `selectedcontent`). The scanner tracks quote state only within tag context to
+   avoid false positives on attribute values containing `<!--`. Because comments
    are stripped, commented tag literals do NOT count toward coverage —
    always use a real element for required tags (e.g. a bare `<base>`
    with no href for base coverage, so it does not rewrite relative URLs).
