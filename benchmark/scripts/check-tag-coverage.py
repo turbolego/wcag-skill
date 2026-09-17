@@ -40,7 +40,7 @@ _P_CLOSERS = {
     "address", "article", "aside", "blockquote", "details", "div", "dl",
     "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
     "h4", "h5", "h6", "header", "hr", "main", "menu", "nav", "ol", "p",
-    "pre", "section", "table", "ul", "hgroup",
+    "pre", "section", "table", "ul", "hgroup", "search",
 }
 
 AUTO_CLOSE_ON_OPEN = {
@@ -56,7 +56,7 @@ AUTO_CLOSE_ON_OPEN = {
     "tbody": {"thead", "tbody", "tfoot"},
     "tfoot": {"thead", "tbody", "tfoot"},
     "colgroup": {"colgroup"},
-    "rt": {"rt"},
+    "rt": {"rt", "rp"},
     "rp": {"rt", "rp"},
 }
 for _closer in _P_CLOSERS:
@@ -159,9 +159,14 @@ def check_balance(html):
             self.stack.append(tag)
 
         def handle_startendtag(self, tag, attrs):
+            # For non-void start-end tags (e.g. <div/>), HTML5 does NOT treat them as self-closing.
+            # Previously we called handle_starttag then synthesized an end tag, which could mask structural errors.
+            # Instead, we treat such occurrences as a stray end tag error (or could ignore). Here we record a stray end tag.
             self.handle_starttag(tag, attrs)
             if tag not in VOID:
-                self.handle_endtag(tag)
+                # Record as stray end tag to surface the issue.
+                self.stray_end_tags.append((tag, self.getpos()))
+                return
 
         def handle_endtag(self, tag):
             if tag in VOID:
