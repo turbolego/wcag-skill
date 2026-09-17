@@ -40,7 +40,7 @@ _P_CLOSERS = {
     "address", "article", "aside", "blockquote", "details", "div", "dl",
     "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3",
     "h4", "h5", "h6", "header", "hr", "main", "menu", "nav", "ol", "p",
-    "pre", "section", "table", "ul", "hgroup",
+    "pre", "section", "table", "ul", "hgroup", "search",
 }
 
 AUTO_CLOSE_ON_OPEN = {
@@ -56,7 +56,7 @@ AUTO_CLOSE_ON_OPEN = {
     "tbody": {"thead", "tbody", "tfoot"},
     "tfoot": {"thead", "tbody", "tfoot"},
     "colgroup": {"colgroup"},
-    "rt": {"rt"},
+    "rt": {"rt", "rp"},
     "rp": {"rt", "rp"},
 }
 for _closer in _P_CLOSERS:
@@ -69,25 +69,33 @@ def strip_comments(html):
     """Strip HTML comments while respecting quoted attribute values.
 
     A raw regex r'<!--.*?-->' treats <!-- inside quoted attribute
-    values (e.g. data-value=\"<!--\") as a comment start, which can
-    destroy legitimate content. This scanner tracks quote state so
-    <!-- only starts a comment outside attribute values.
+    values (e.g. data-value="<!--") as a comment start, which can
+    destroy legitimate content. This scanner tracks quote state only
+    within tag/attribute context, so <!-- in text content (e.g. It's)
+    is not affected by apostrophes.
     """
     result = []
     i = 0
+    in_tag = False
     in_single_quote = False
     in_double_quote = False
     while i < len(html):
         ch = html[i]
-        if ch == '"' and not in_single_quote:
-            in_double_quote = not in_double_quote
-            result.append(ch)
-            i += 1
-        elif ch == "'" and not in_double_quote:
-            in_single_quote = not in_single_quote
-            result.append(ch)
-            i += 1
-        elif i + 3 < len(html) and html[i:i+4] == '<!--' and not in_single_quote and not in_double_quote:
+        # Track tag state
+        if ch == '<' and not in_single_quote and not in_double_quote:
+            in_tag = True
+        elif ch == '>' and not in_single_quote and not in_double_quote:
+            in_tag = False
+            in_single_quote = False
+            in_double_quote = False
+        # Track quotes only inside tags
+        if in_tag:
+            if ch == '"' and not in_single_quote:
+                in_double_quote = not in_double_quote
+            elif ch == "'" and not in_double_quote:
+                in_single_quote = not in_single_quote
+        # Check for comment (only outside quotes)
+        if i + 3 < len(html) and html[i:i+4] == '<!--' and not in_single_quote and not in_double_quote:
             end = html.find('-->', i + 4)
             if end == -1:
                 result.append(html[i:])
@@ -97,7 +105,6 @@ def strip_comments(html):
             result.append(ch)
             i += 1
     return ''.join(result)
-
 
 def check_coverage(html, tags_path):
     with open(tags_path) as f:
@@ -133,8 +140,14 @@ def check_balance(html):
 
         def handle_startendtag(self, tag, attrs):
             self.handle_starttag(tag, attrs)
-            if tag not in VOID:
-                self.handle_endtag(tag)
+            if tag in VOID:
+                # Void element with /> - valid
+                return
+            # Non-void element with /> is a parse error per HTML5
+            # Record it as a stray end tag since we pushed it onto the stack
+            self.stray_end_tags.append((tag, self.getpos()))
+            if tag in self.stack:
+                self.stack.pop()
 
         def handle_endtag(self, tag):
             if tag in VOID:

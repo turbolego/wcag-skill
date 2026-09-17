@@ -5,10 +5,10 @@ All cases are verified against `benchmark/resources/html_tags.json` (113 tags).
 
 ## HTML comments do not count toward coverage
 
-`check_tag_coverage` strips HTML comments (`<!-- ... -->`) before running
+`check_coverage` strips HTML comments (`<!-- ... -->`) before running
 `TAG_RE` against the document. A commented-out `<base>` literal does NOT
 count as base coverage. **Always use a real element** for tags required by
-`html_tags.json` — a bare `<base>` (no href) satisfies the tag requirement
+`benchmark/resources/html_tags.json` — a bare `<base>` (no href) satisfies the tag requirement
 without rewriting relative URLs.
 
 ## Optional-end-tag tracking is context-sensitive, not global
