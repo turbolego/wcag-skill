@@ -44,8 +44,8 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
    `selectedcontent`). The scanner tracks quote state only within tag context to
    avoid false positives on attribute values containing `<!--`. Because comments
    are stripped, commented tag literals do NOT count toward coverage —
-   always use a real element for required tags (e.g. a bare `<base>`
-   with no href for base coverage, so it does not rewrite relative URLs).
+   always use a real element for required tags (e.g. <base target="_self">
+       for base coverage and no URL rewrite).
 5. Keep `<section>` nesting closed — every open section needs its `</section>` before
    `<main>` closes; nested sections must be explicitly terminated.
 
@@ -70,4 +70,4 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
   markup tailored to its prompt.
 - New pitfall: `test-suite.sh` starts its own HTTP server — `curl` returning
   exit 7 between runs just means the server is down, not a broken path. Don't manually
-  `curl` to verify the CSS url during the run.
+  `curl` to verify the CSS URL during the run.

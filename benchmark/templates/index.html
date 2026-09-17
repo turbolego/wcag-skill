@@ -7,7 +7,7 @@
     __RUN_FOLDER__     -> run folder name, e.g. DeepSeek V4 Pro-20260731-145624
   The CSS/script hrefs use absolute %20-encoded paths (the harness injects its
   own base element for the gauntlet repo, so relative paths would silently break).
-  A bare <base> element is kept in <head> solely to satisfy html_tags.json base
+  A <base target="_self"> element is kept in <head> solely to satisfy html_tags.json base
   coverage; it has no href so it does NOT rewrite relative URLs or conflict with
   the harness-injected base. Also create scripts/dummy.js (any content) next to this file.
 --><html lang="en">
@@ -16,7 +16,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI WCAG Gauntlet — Benchmark</title>
     <meta name="description" content="Accessibility benchmark page for AI WCAG Gauntlet">
-    <base>
+    <base target="_self">
     <link rel="stylesheet" href="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/style.css">
     <script src="/AI-WCAG-Gauntlet/benchmarks/__MODEL_NAME_ENC__/__RUN_FOLDER__/scripts/dummy.js"></script>
     <style>
