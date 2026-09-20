@@ -87,7 +87,17 @@ echo "Running axe..."
 axe "$url" --chrome-path "$chrome_path" --chromedriver-path "$driver_path" --stdout > "$out_dir/axe_report.json"
 
 echo "Running Pa11y..."
-PUPPETEER_EXECUTABLE_PATH="$chrome_path" pa11y "$url" --reporter json > "$out_dir/pa11y_report.json"
+# Pa11y intentionally exits 2 (not 0) when it finds accessibility errors on
+# the page (exit 1 means an actual technical fault; see pa11y's README).
+# This script's job is to produce reports, not gate on findings, so only
+# treat pa11y's exit code as fatal when it's neither "success" nor "found
+# errors".
+pa11y_status=0
+PUPPETEER_EXECUTABLE_PATH="$chrome_path" pa11y "$url" --reporter json > "$out_dir/pa11y_report.json" || pa11y_status=$?
+if [[ "$pa11y_status" -ne 0 && "$pa11y_status" -ne 2 ]]; then
+  echo "Pa11y failed with exit code $pa11y_status" >&2
+  exit "$pa11y_status"
+fi
 
 echo "Running QualWeb ACT rules..."
 PUPPETEER_EXECUTABLE_PATH="$chrome_path" node "$qualweb_cli" -u "$url" -m act-rules --act-levels A AA AAA -o "$out_dir/qualweb_report.json"
