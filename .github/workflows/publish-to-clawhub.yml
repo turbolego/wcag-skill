@@ -5,10 +5,18 @@ name: Publish to ClawHub
 # with "Invalid publish output: 'pending-publication'" whenever a prior
 # publish attempt for the same version is still undergoing security scan
 # review; its status-key mapping doesn't recognize that state
-# (see run 33077893243). publish-web.yml is the active push-triggered
-# publisher until that upstream bug is fixed. Do not add a push trigger
-# here at the same time as publish-web.yml — exactly one workflow may
-# publish on push, or the two can race and double-publish the same commit.
+# (see runs 33077893243 and 35492158592). Note that the underlying CLI
+# publish can still succeed server-side even though the workflow reports
+# failure — run 35492158592 actually published version 2.0.4 to ClawHub
+# while the job exited non-zero, which silently drifted the live version
+# ahead of SKILL.md. After any run of this workflow, check
+# https://clawhub.ai/api/v1/skills/wcag-skill and reconcile SKILL.md's
+# `metadata.version` (and skill-card.md / README.md) with whatever
+# actually published before bumping again. publish-web.yml is the active
+# push-triggered publisher until that upstream bug is fixed. Do not add a
+# push trigger here at the same time as publish-web.yml — exactly one
+# workflow may publish on push, or the two can race and double-publish
+# the same commit.
 on:
   workflow_dispatch:
 

@@ -34,7 +34,7 @@ mkdir -p "$root/scripts/__pycache__"
 echo "bogus" > "$root/scripts/__pycache__/decoy.pyc"
 trap 'rm -rf "$tmp_dir" "$root/scripts/__pycache__"' EXIT
 python3 scripts/publish-web.py --dry-run > "$tmp_dir/publish_dry_run.txt"
-grep -q '"version": "2.0.3"' "$tmp_dir/publish_dry_run.txt"
+grep -q '"version": "2.0.5"' "$tmp_dir/publish_dry_run.txt"
 grep -q '"path": "SKILL.md"' "$tmp_dir/publish_dry_run.txt"
 grep -q '"path": "benchmark/README.md"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '"path": "README.md"' "$tmp_dir/publish_dry_run.txt"
