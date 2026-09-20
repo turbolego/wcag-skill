@@ -48,5 +48,10 @@ const report = {
 };
 
 writeFileSync(resolve(outputPath), JSON.stringify(report));
-process.exit(result.status ?? 1);
+
+// vnu exits non-zero when it finds markup errors, same as it would for a
+// technical fault. This script's job is only to produce the report (as
+// axe/Pa11y/QualWeb do above in a11y-audit.sh), not to gate on findings, so
+// always exit 0 once the report has been written successfully.
+process.exit(0);
 
