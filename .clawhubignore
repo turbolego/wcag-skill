@@ -18,6 +18,10 @@ skill-card.md
 # uploads to an external API — see security-audit finding Tp4).
 scripts/publish-web.py
 
+# CI-only version-bump helper invoked by the publish workflows; not part of
+# the skill's runtime content.
+scripts/bump-skill-version.py
+
 # Generated artifacts that must never ship in a release
 __pycache__/
 *.py[cod]

@@ -10,6 +10,15 @@ name: Publish to ClawHub (Web Upload)
 # workflow's own script (scripts/publish-web.py) treats a pending scan as
 # a normal successful publish, so it isn't affected by either bug.
 #
+# The version is auto-incremented on every real publish by
+# scripts/bump-skill-version.py, which bumps the patch component past
+# whatever is highest of the checked-in SKILL.md version and every version
+# ClawHub already has on record — so a run that silently published ahead of
+# the repo (as happened once via the reusable workflow's
+# "pending-publication" bug, run 35492158592) can't cause a version
+# collision on the next publish. The bump is committed straight back to the
+# branch with `[skip ci]` so it doesn't re-trigger this workflow.
+#
 # publish-to-clawhub.yml is kept as a manual (workflow_dispatch-only)
 # option. Do not give it a push trigger at the same time as this workflow —
 # exactly one workflow may publish on push, or the two can race and
@@ -41,12 +50,35 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
+      - name: Auto-increment skill version
+        id: bump
+        run: |
+          version="$(python3 scripts/bump-skill-version.py --write)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "::notice:: Next skill version: $version"
+
+      - name: Commit version bump
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SKILL.md README.md skill-card.md
+          if git diff --cached --quiet; then
+            echo "No version change to commit"
+          else
+            git commit -m "ci: bump wcag-skill version to ${{ steps.bump.outputs.version }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
 
       - name: Publish to ClawHub
         env:
