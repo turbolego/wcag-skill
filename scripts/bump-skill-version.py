@@ -10,6 +10,14 @@ version that already exists — including one published by a previous run that
 looked like it failed (see the "pending-publication" status bug documented in
 publish-to-clawhub.yml) — without anyone manually editing version numbers.
 
+If the registry can't be queried (network error, non-404 HTTP error, or a
+malformed response), this script fails loudly rather than silently falling
+back to the local version alone: doing otherwise would let a stale version
+be bumped and collide with one that already exists during a transient
+ClawHub outage — the exact failure this script exists to prevent. A
+confirmed 404 (the skill has genuinely never been published) is the only
+case treated as "no versions yet".
+
 Keeps SKILL.md's metadata.version, README.md's version badge, and
 skill-card.md's version note in sync.
 
@@ -46,16 +54,43 @@ def read_local_version() -> str:
 def read_live_versions() -> list[str]:
     """Return every version ClawHub already has for this skill.
 
-    Returns an empty list if the skill has never been published or the
-    registry can't be reached, so a first-ever publish still works offline.
+    Returns an empty list only when the registry gives a confirmed 404 (the
+    skill has never been published). Any other failure — network errors,
+    timeouts, non-404 HTTP errors, or a malformed response — is fatal: silently
+    treating those as "no versions" would let a stale local version get
+    bumped and collide with a version that already exists, which is exactly
+    the failure this script exists to prevent.
     """
     url = f"https://clawhub.ai/api/v1/skills/{SKILL_SLUG}/versions"
     try:
         with urlopen(url, timeout=15) as resp:
             data = json.load(resp)
-        return [item["version"] for item in data.get("items", [])]
-    except (URLError, HTTPError, ValueError, KeyError):
-        return []
+    except HTTPError as exc:
+        if exc.code == 404:
+            return []
+        raise SystemExit(
+            f"ClawHub registry query failed with HTTP {exc.code}; refusing to "
+            "guess the published version list. Retry once the registry is "
+            "reachable."
+        ) from exc
+    except (URLError, TimeoutError) as exc:
+        raise SystemExit(
+            f"Could not reach ClawHub registry ({exc}); refusing to guess the "
+            "published version list. Retry once the registry is reachable."
+        ) from exc
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise SystemExit(
+            f"ClawHub registry returned an unparseable response ({exc}); "
+            "refusing to guess the published version list."
+        ) from exc
+
+    try:
+        return [item["version"] for item in data["items"]]
+    except (KeyError, TypeError) as exc:
+        raise SystemExit(
+            f"ClawHub registry response was missing expected fields ({exc}); "
+            "refusing to guess the published version list."
+        ) from exc
 
 
 def parse_version(value: str) -> Version:

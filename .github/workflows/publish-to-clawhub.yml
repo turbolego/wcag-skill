@@ -16,12 +16,18 @@ name: Publish to ClawHub
 # the branch before the publish job runs against it — so nobody needs to
 # hand-bump SKILL.md or reconcile it against the live version anymore.
 # publish-web.yml is the active push-triggered publisher until the
-# upstream "pending-publication" bug is fixed. Do not add a push trigger
-# here at the same time as publish-web.yml — exactly one workflow may
-# publish on push, or the two can race and double-publish the same
-# commit.
+# upstream "pending-publication" bug is fixed. Both workflows share the
+# `clawhub-publish` concurrency group below (with cancel-in-progress
+# disabled) so a manual run here and a push-triggered publish-web.yml run
+# can never bump/publish concurrently — without that, both could read the
+# same highest registry version, choose the same next patch, and race
+# each other's push/publish.
 on:
   workflow_dispatch:
+
+concurrency:
+  group: clawhub-publish
+  cancel-in-progress: false
 
 permissions:
   contents: write

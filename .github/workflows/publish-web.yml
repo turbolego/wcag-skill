@@ -20,9 +20,11 @@ name: Publish to ClawHub (Web Upload)
 # branch with `[skip ci]` so it doesn't re-trigger this workflow.
 #
 # publish-to-clawhub.yml is kept as a manual (workflow_dispatch-only)
-# option. Do not give it a push trigger at the same time as this workflow —
-# exactly one workflow may publish on push, or the two can race and
-# double-publish the same commit.
+# option. Both workflows share the `clawhub-publish` concurrency group
+# below (with cancel-in-progress disabled) so a manual run and a push-
+# triggered run can never bump/publish concurrently — without that, both
+# could read the same highest registry version, choose the same next
+# patch, and race each other's push/publish.
 
 on:
   push:
@@ -44,8 +46,8 @@ on:
         default: false
 
 concurrency:
-  group: clawhub-publish-${{ github.ref }}
-  cancel-in-progress: true
+  group: clawhub-publish
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
