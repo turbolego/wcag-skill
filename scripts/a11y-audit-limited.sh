@@ -15,11 +15,21 @@ if [ -z "$AVAILABLE_MEM" ] || [ "$AVAILABLE_MEM" -le 0 ]; then
     echo "ERROR: Could not determine available memory"
     exit 1
 fi
-# Limit to 50% of available memory (safe margin) for ulimit (virtual memory)
-# Ensure at least 512 MB to avoid overly low limits on small systems
-LIMIT_MEM=$(( AVAILABLE_MEM * 50 / 100 ))
-if [ "$LIMIT_MEM" -lt 512 ]; then
-    LIMIT_MEM=512
+
+# Configurable limits via environment variables (with sensible defaults)
+# ULIMIT_PERCENT: percentage of available memory to use for ulimit -v (virtual memory ceiling)
+# ULIMIT_MIN_MB: minimum virtual memory limit in MB
+# NODE_PERCENT: percentage of available memory for Node's old space (--max-old-space-size)
+# NODE_MIN_MB: minimum Node old space in MB
+ULIMIT_PERCENT=${ULIMIT_PERCENT:-90}
+ULIMIT_MIN_MB=${ULIMIT_MIN_MB:-1536}
+NODE_PERCENT=${NODE_PERCENT:-30}
+NODE_MIN_MB=${NODE_MIN_MB:-256}
+
+# Compute ulimit virtual memory limit (in MB)
+LIMIT_MEM=$(( AVAILABLE_MEM * ULIMIT_PERCENT / 100 ))
+if [ "$LIMIT_MEM" -lt "$ULIMIT_MIN_MB" ]; then
+    LIMIT_MEM=$ULIMIT_MIN_MB
 fi
 # Convert to bytes for ulimit (ulimit takes KB)
 LIMIT_KB=$(( LIMIT_MEM * 1024 ))
@@ -27,11 +37,10 @@ LIMIT_KB=$(( LIMIT_MEM * 1024 ))
 # Set memory limits for the process (affects children)
 ulimit -v "$LIMIT_KB" || true
 
-# Node memory limit (10% of available memory, in MB)
-NODE_MEM_MB=$(( AVAILABLE_MEM * 10 / 100 ))
-# Ensure at least 64 MB for Node
-if [ "$NODE_MEM_MB" -lt 64 ]; then
-    NODE_MEM_MB=64
+# Node memory limit (in MB)
+NODE_MEM_MB=$(( AVAILABLE_MEM * NODE_PERCENT / 100 ))
+if [ "$NODE_MEM_MB" -lt "$NODE_MIN_MB" ]; then
+    NODE_MEM_MB=$NODE_MIN_MB
 fi
 NODE_OPTIONS="--max-old-space-size=${NODE_MEM_MB}"
 export NODE_OPTIONS
