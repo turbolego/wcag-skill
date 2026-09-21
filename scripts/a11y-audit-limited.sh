@@ -29,7 +29,6 @@ if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
             fi
         fi
     fi
-fi
 elif [ -r /sys/fs/cgroup/memory.max ]; then
     CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
     if [ -n "$CG_LIMIT_BYTES" ]; then
