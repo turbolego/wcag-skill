@@ -50,7 +50,7 @@ fi
 if [ "$NODE_MEM_MB" -lt "$NODE_MIN_MB" ] && [ "$AVAILABLE_MEM" -ge "$NODE_MIN_MB" ]; then
     NODE_MEM_MB=$NODE_MIN_MB
 fi
-NODE_OPTIONS="--max-old-space-size=${NODE_MEM_MB}"
+NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=${NODE_MEM_MB}"
 export NODE_OPTIONS
 
 # Run the audit script with the guardrails

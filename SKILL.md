@@ -96,21 +96,26 @@ contrast. Ensure no part of a focused component is obscured by author-created
 content.
 
 ## Audit → triage → fix → verify
-|
-|1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
+
+
+1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
    matching Chromedriver available. Set `AXE_CHROME_PATH` and
    `AXE_CHROMEDRIVER_PATH` when auto-detection is insufficient.
    In low-memory environments (e.g., <2GB RAM), consider using the headless
    shell and limiting memory via `NODE_OPTIONS` and `ulimit -v`; see
    `scripts/a11y-audit-limited.sh` for an example.
-|2. Serve the site over HTTP. Run the reproducible wrapper in
+
+2. Serve the site over HTTP. Run the reproducible wrapper in
    [`references/validator-workflow.md`](references/validator-workflow.md).
-|3. Triage structural and markup errors first, then semantic, visual, operable,
+
+3. Triage structural and markup errors first, then semantic, visual, operable,
    and understandable issues. Deduplicate findings across tools; retain raw
    JSON reports.
-|4. Fix one coherent group of issues, rerun the audit, and record the result.
+
+4. Fix one coherent group of issues, rerun the audit, and record the result.
    Review every `incomplete`, `cantTell`, warning, and false-positive decision.
-|5. For AAA, complete the mandatory manual protocol and evidence matrix before
+
+5. For AAA, complete the mandatory manual protocol and evidence matrix before
    any conformance statement.
 
 ## Report precisely
