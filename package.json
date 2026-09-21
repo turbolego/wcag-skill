@@ -11,6 +11,6 @@
     "@qualweb/cli": "0.7.31",
     "chromedriver": "152.0.2",
     "pa11y": "9.1.1",
-    "vnu-jar": "26.8.21"
+    "vnu-jar": "26.9.16"
   }
 }
