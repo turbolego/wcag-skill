@@ -63,7 +63,7 @@ HTTP, and treat automated output as evidence—not proof of conformance.
   only where their semantics help orientation. Use `<section>` for a meaningful
   thematic grouping; give it an accessible heading when that improves its name.
   Use `<div>` for visual grouping alone.
-|- Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
+- Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
   disclosure/dialog patterns before inventing ARIA widgets. Never put a
   focusable element inside `aria-hidden="true"` content.
 |- Give informative images equivalent text; use `alt=""` only for decorative
