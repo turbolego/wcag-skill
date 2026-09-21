@@ -66,19 +66,19 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 - Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
   disclosure/dialog patterns before inventing ARIA widgets. Never put a
   focusable element inside `aria-hidden="true"` content.
-|- Give informative images equivalent text; use `alt=""` only for decorative
+- Give informative images equivalent text; use `alt=""` only for decorative
   images. Provide the relevant captions, transcript, audio description, or
   media alternative for media.
-|- Label every form control, group related controls with `<fieldset><legend>`,
+- Label every form control, group related controls with `<fieldset><legend>`,
   use appropriate input types and `autocomplete`, preserve entered data after
   recoverable errors, and identify errors in text as well as colour.
-|- Keep DOM order aligned with reading and Tab order. Provide a skip link,
+- Keep DOM order aligned with reading and Tab order. Provide a skip link,
   visible focus, keyboard operation, and no keyboard trap.
-|- Do not communicate status, errors, required fields, or instructions by colour,
+- Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
-|- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
-|- Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
-|- Make sure the keyboard focus indicator is visible and has sufficient contrast (AAA: at least 2 CSS px perimeter and 3:1 contrast).
+- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
+- Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
+- Make sure the keyboard focus indicator is visible and has sufficient contrast (AAA: at least 2 CSS px perimeter and 3:1 contrast).
 
 ## Use the right numeric target
 

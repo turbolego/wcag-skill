@@ -8,8 +8,8 @@ set -e
 if [ -r /proc/meminfo ]; then
     AVAILABLE_MEM=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
 else
-    # Fallback to free -m (4th column is available memory)
-    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $4}')
+    # Fallback to free -m (6th column is available memory)
+    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}')
 fi
 if [ -z "$AVAILABLE_MEM" ] || [ "$AVAILABLE_MEM" -le 0 ]; then
     echo "ERROR: Could not determine available memory"
@@ -39,7 +39,7 @@ fi
 LIMIT_KB=$(( LIMIT_MEM * 1024 ))
 
 # Set memory limits for the process (affects children)
-ulimit -v "$LIMIT_KB" || true
+ulimit -v "$LIMIT_KB" || { echo "ERROR: Failed to set virtual memory limit to ${LIMIT_KB} KB" >&2; exit 1; }
 
 # Node memory limit (in MB)
 NODE_MEM_MB=$(( AVAILABLE_MEM * NODE_PERCENT / 100 ))
