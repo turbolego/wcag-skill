@@ -87,8 +87,8 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 | Normal text contrast | 4.5:1 | 7:1 |
 | Large text contrast | 3:1 | 4.5:1 |
 | UI component / focus contrast | 3:1 | 3:1 plus AAA focus-area rule |
-|| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
-|| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px and no time limits on dragging |
+| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
+| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px and no time limits on dragging |
 
 For AAA, make the keyboard focus indicator at least as large as a two-CSS-pixel
 perimeter of the unfocused component and give changed pixels at least 3:1
