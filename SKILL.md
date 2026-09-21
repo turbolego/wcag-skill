@@ -58,24 +58,27 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 > rationale for each criterion.
 
 ## Build accessible by default
-
-- Use one `<main>`, a meaningful `<title>`, one clear `<h1>`, and landmarks
+|
+|- Use one `<main>`, a meaningful `<title>`, one clear `<h1>`, and landmarks
   only where their semantics help orientation. Use `<section>` for a meaningful
   thematic grouping; give it an accessible heading when that improves its name.
   Use `<div>` for visual grouping alone.
-- Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
+|- Use real `<a>`, `<button>`, `<input>`, `<select>`, `<textarea>`, and native
   disclosure/dialog patterns before inventing ARIA widgets. Never put a
   focusable element inside `aria-hidden="true"` content.
-- Give informative images equivalent text; use `alt=""` only for decorative
+|- Give informative images equivalent text; use `alt=""` only for decorative
   images. Provide the relevant captions, transcript, audio description, or
   media alternative for media.
-- Label every form control, group related controls with `<fieldset><legend>`,
+|- Label every form control, group related controls with `<fieldset><legend>`,
   use appropriate input types and `autocomplete`, preserve entered data after
   recoverable errors, and identify errors in text as well as colour.
-- Keep DOM order aligned with reading and Tab order. Provide a skip link,
+|- Keep DOM order aligned with reading and Tab order. Provide a skip link,
   visible focus, keyboard operation, and no keyboard trap.
-- Do not communicate status, errors, required fields, or instructions by colour,
+|- Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
+|- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
+|- Provide alternatives for dragging movements or allow cancellation (AA) and ensure no time limits on dragging (AAA).
+|- Make sure the keyboard focus indicator is visible and has sufficient contrast (AAA: at least 2 CSS px perimeter and 3:1 contrast).
 
 ## Use the right numeric target
 
@@ -84,7 +87,8 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 | Normal text contrast | 4.5:1 | 7:1 |
 | Large text contrast | 3:1 | 4.5:1 |
 | UI component / focus contrast | 3:1 | 3:1 plus AAA focus-area rule |
-| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
+|| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
+|| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px and no time limits on dragging |
 
 For AAA, make the keyboard focus indicator at least as large as a two-CSS-pixel
 perimeter of the unfocused component and give changed pixels at least 3:1
@@ -92,18 +96,21 @@ contrast. Ensure no part of a focused component is obscured by author-created
 content.
 
 ## Audit → triage → fix → verify
-
-1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
+|
+|1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
    matching Chromedriver available. Set `AXE_CHROME_PATH` and
    `AXE_CHROMEDRIVER_PATH` when auto-detection is insufficient.
-2. Serve the site over HTTP. Run the reproducible wrapper in
+   In low-memory environments (e.g., <2GB RAM), consider using the headless
+   shell and limiting memory via `NODE_OPTIONS` and `ulimit -v`; see
+   `scripts/a11y-audit-limited.sh` for an example.
+|2. Serve the site over HTTP. Run the reproducible wrapper in
    [`references/validator-workflow.md`](references/validator-workflow.md).
-3. Triage structural and markup errors first, then semantic, visual, operable,
+|3. Triage structural and markup errors first, then semantic, visual, operable,
    and understandable issues. Deduplicate findings across tools; retain raw
    JSON reports.
-4. Fix one coherent group of issues, rerun the audit, and record the result.
+|4. Fix one coherent group of issues, rerun the audit, and record the result.
    Review every `incomplete`, `cantTell`, warning, and false-positive decision.
-5. For AAA, complete the mandatory manual protocol and evidence matrix before
+|5. For AAA, complete the mandatory manual protocol and evidence matrix before
    any conformance statement.
 
 ## Report precisely
