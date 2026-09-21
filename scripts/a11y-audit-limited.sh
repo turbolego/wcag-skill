@@ -28,7 +28,11 @@ NODE_MIN_MB=${NODE_MIN_MB:-256}
 
 # Compute ulimit virtual memory limit (in MB)
 LIMIT_MEM=$(( AVAILABLE_MEM * ULIMIT_PERCENT / 100 ))
-if [ "$LIMIT_MEM" -lt "$ULIMIT_MIN_MB" ]; then
+# Cap to available budget; minimum applies only when budget supports it
+if [ "$LIMIT_MEM" -gt "$AVAILABLE_MEM" ]; then
+    LIMIT_MEM=$AVAILABLE_MEM
+fi
+if [ "$LIMIT_MEM" -lt "$ULIMIT_MIN_MB" ] && [ "$AVAILABLE_MEM" -ge "$ULIMIT_MIN_MB" ]; then
     LIMIT_MEM=$ULIMIT_MIN_MB
 fi
 # Convert to bytes for ulimit (ulimit takes KB)
@@ -39,7 +43,11 @@ ulimit -v "$LIMIT_KB" || true
 
 # Node memory limit (in MB)
 NODE_MEM_MB=$(( AVAILABLE_MEM * NODE_PERCENT / 100 ))
-if [ "$NODE_MEM_MB" -lt "$NODE_MIN_MB" ]; then
+# Cap to available budget; minimum applies only when budget supports it
+if [ "$NODE_MEM_MB" -gt "$AVAILABLE_MEM" ]; then
+    NODE_MEM_MB=$AVAILABLE_MEM
+fi
+if [ "$NODE_MEM_MB" -lt "$NODE_MIN_MB" ] && [ "$AVAILABLE_MEM" -ge "$NODE_MIN_MB" ]; then
     NODE_MEM_MB=$NODE_MIN_MB
 fi
 NODE_OPTIONS="--max-old-space-size=${NODE_MEM_MB}"
