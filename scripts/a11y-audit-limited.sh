@@ -8,9 +8,28 @@ set -e
 if [ -r /proc/meminfo ]; then
     AVAILABLE_MEM=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
 else
-    # Fallback to free -m (6th column is available memory)
+    # Fallback: host free -m (6th column = available memory); cgroup preferred above
     AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}')
 fi
+# Prefer container/cgroup memory limit over host /proc/meminfo (v1 then v2)
+if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+    CG_LIMIT_RAW=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null)
+    if [ -n "$CG_LIMIT_RAW" ]; then
+        CG_LIMIT_KB=$(echo "$CG_LIMIT_RAW" | awk '{print int($1/1024)}')
+        if [ -n "$CG_LIMIT_KB" ] && [ "$CG_LIMIT_KB" -gt 0 ] && [ "$CG_LIMIT_KB" -lt 9007199254740992 ]; then
+            AVAILABLE_MEM=$CG_LIMIT_KB
+        fi
+    fi
+elif [ -r /sys/fs/cgroup/memory.max ]; then
+    CG_LIMIT_RAW=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
+    if [ -n "$CG_LIMIT_RAW" ]; then
+        CG_LIMIT_KB=$(echo "$CG_LIMIT_RAW" | awk '{if ($1+0 > 0) print int($1/1024); else print 0}')
+        if [ -n "$CG_LIMIT_KB" ] && [ "$CG_LIMIT_KB" -gt 0 ]; then
+            AVAILABLE_MEM=$CG_LIMIT_KB
+        fi
+    fi
+fi
+
 if [ -z "$AVAILABLE_MEM" ] || [ "$AVAILABLE_MEM" -le 0 ]; then
     echo "ERROR: Could not determine available memory"
     exit 1
