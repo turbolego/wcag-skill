@@ -58,8 +58,8 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 > rationale for each criterion.
 
 ## Build accessible by default
-|
-|- Use one `<main>`, a meaningful `<title>`, one clear `<h1>`, and landmarks
+
+- Use one `<main>`, a meaningful `<title>`, one clear `<h1>`, and landmarks
   only where their semantics help orientation. Use `<section>` for a meaningful
   thematic grouping; give it an accessible heading when that improves its name.
   Use `<div>` for visual grouping alone.
@@ -77,7 +77,7 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 |- Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
 |- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
-|- Ensure dragging movements can be operated with a single pointer without dragging (unless dragging is essential) and provide alternatives or cancellation (AA). Ensure no time limits on dragging (AAA).
+|- Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
 |- Make sure the keyboard focus indicator is visible and has sufficient contrast (AAA: at least 2 CSS px perimeter and 3:1 contrast).
 
 ## Use the right numeric target
