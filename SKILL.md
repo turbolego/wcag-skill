@@ -77,7 +77,7 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 |- Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
 |- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
-|- Provide alternatives for dragging movements or allow cancellation (AA) and ensure no time limits on dragging (AAA).
+|- Ensure dragging movements can be operated with a single pointer without dragging (unless dragging is essential) and provide alternatives or cancellation (AA). Ensure no time limits on dragging (AAA).
 |- Make sure the keyboard focus indicator is visible and has sufficient contrast (AAA: at least 2 CSS px perimeter and 3:1 contrast).
 
 ## Use the right numeric target
