@@ -76,6 +76,9 @@ HTTP, and treat automated output as evidence—not proof of conformance.
   visible focus, keyboard operation, and no keyboard trap.
 - Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
+- Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
+- Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
+- Make sure the keyboard focus indicator is visible and has sufficient contrast (AA, WCAG 2.2 SC 2.4.11 Focus Appearance: at least 2 CSS px perimeter and 3:1 contrast).
 
 ## Use the right numeric target
 
@@ -83,26 +86,35 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 |---|---:|---:|
 | Normal text contrast | 4.5:1 | 7:1 |
 | Large text contrast | 3:1 | 4.5:1 |
-| UI component / focus contrast | 3:1 | 3:1 plus AAA focus-area rule |
+| UI component / focus contrast | 3:1 (AA; includes the 2.4.11 focus-appearance perimeter/contrast rule) | 3:1 |
 | Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
+| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px and no time limits on dragging |
 
-For AAA, make the keyboard focus indicator at least as large as a two-CSS-pixel
-perimeter of the unfocused component and give changed pixels at least 3:1
-contrast. Ensure no part of a focused component is obscured by author-created
-content.
+For AA (WCAG 2.2 SC 2.4.11 Focus Appearance), make the keyboard focus indicator
+at least as large as a two-CSS-pixel perimeter of the unfocused component and
+give changed pixels at least 3:1 contrast. Ensure no part of a focused
+component is obscured by author-created content.
 
 ## Audit → triage → fix → verify
+
 
 1. Install the tools listed in the frontmatter and make Chrome/Chromium plus a
    matching Chromedriver available. Set `AXE_CHROME_PATH` and
    `AXE_CHROMEDRIVER_PATH` when auto-detection is insufficient.
+   In low-memory environments (e.g., <2GB RAM), consider using the headless
+   shell and limiting memory via `NODE_OPTIONS` and `ulimit -v`; see
+   `scripts/a11y-audit-limited.sh` for an example.
+
 2. Serve the site over HTTP. Run the reproducible wrapper in
    [`references/validator-workflow.md`](references/validator-workflow.md).
+
 3. Triage structural and markup errors first, then semantic, visual, operable,
    and understandable issues. Deduplicate findings across tools; retain raw
    JSON reports.
+
 4. Fix one coherent group of issues, rerun the audit, and record the result.
    Review every `incomplete`, `cantTell`, warning, and false-positive decision.
+
 5. For AAA, complete the mandatory manual protocol and evidence matrix before
    any conformance statement.
 
