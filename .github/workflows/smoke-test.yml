@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
       - name: Install Nu HTML Checker
         run: npm install --global vnu-jar
       - name: Run bundled smoke tests
