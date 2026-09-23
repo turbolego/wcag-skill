@@ -14,7 +14,6 @@ else
     AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}')
 fi
 # Prefer container/cgroup memory limit over host /proc/meminfo (v1 then v2)
-# Prefer container/cgroup memory limit over host /proc/meminfo (v1 then v2)
 if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
     CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null)
     if [ -n "$CG_LIMIT_BYTES" ]; then
@@ -30,7 +29,7 @@ if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
         fi
     fi
 fi
-elif [ -r /sys/fs/cgroup/memory.max ]; then
+if [ -r /sys/fs/cgroup/memory.max ]; then
     CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
     if [ -n "$CG_LIMIT_BYTES" ]; then
         CG_LIMIT_MB=$(echo "$CG_LIMIT_BYTES" | awk '{if ($1+0 > 0) print int($1/(1024*1024)); else print 0}')
@@ -39,7 +38,6 @@ elif [ -r /sys/fs/cgroup/memory.max ]; then
         fi
     fi
 fi
-
 # If we still don't have a valid memory amount, error out
 if [ -z "$AVAILABLE_MEM" ] || [ "$AVAILABLE_MEM" -le 0 ]; then
     echo "ERROR: Could not determine available memory"

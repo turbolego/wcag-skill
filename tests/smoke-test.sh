@@ -38,9 +38,9 @@ fi
 grep -q 'UNMATCHED\|structural mismatch' "$tmp_dir/broken_report.txt"
 
 # Dry run must work without a token, and must never package generated artifacts.
-mkdir -p "$root/scripts/__pycache__"
-echo "bogus" > "$root/scripts/__pycache__/decoy.pyc"
-trap 'rm -rf "$tmp_dir" "$root/scripts/__pycache__"' EXIT
+mkdir -p "$tmp_dir/scripts_pycache"
+echo "bogus" > "$tmp_dir/scripts_pycache/decoy.pyc"
+trap 'rm -rf "$tmp_dir" "$tmp_dir/scripts_pycache"' EXIT
 python3 scripts/publish-web.py --dry-run > "$tmp_dir/publish_dry_run.txt"
 # Version is auto-bumped by scripts/bump-skill-version.py before every real
 # publish (see publish-web.yml / publish-to-clawhub.yml), so assert on the
