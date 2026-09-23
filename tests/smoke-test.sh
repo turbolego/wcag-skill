@@ -4,6 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
+# Add locally installed npm binaries to PATH
+export PATH="$PWD/node_modules/.bin:$PATH"
+
 # Prefer the Java 17 we installed locally (if it exists)
 if [ -x "/var/lib/hermes/jdk-17.0.13+11-jre/bin/java" ]; then
     export JAVA_HOME="/var/lib/hermes/jdk-17.0.13+11-jre"
