@@ -42,5 +42,5 @@ jobs:
         env:
           _JAVA_OPTIONS: "-Xmx256m -Xshare:off -Djava.io.tmpdir=/tmp"
         run: |
-    set -euxo pipefail
-    bash -x tests/smoke-test.sh
+          set -euxo pipefail
+          bash -x tests/smoke-test.sh
