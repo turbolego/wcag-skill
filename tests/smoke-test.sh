@@ -4,6 +4,24 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
+# Prefer the Java 17 we installed locally (if it exists)
+if [ -x "/var/lib/hermes/jdk-17.0.13+11-jre/bin/java" ]; then
+    export JAVA_HOME="/var/lib/hermes/jdk-17.0.13+11-jre"
+    export PATH="${JAVA_HOME}/bin:${PATH}"
+fi
+
+# If JAVA_HOME is set by the environment and points to a valid java, use it.
+if [ -n "${JAVA_HOME:-}" ] && [ -x "${JAVA_HOME}/bin/java" ]; then
+    export PATH="${JAVA_HOME}/bin:${PATH}"
+fi
+
+# Debug: show what java we are using
+echo "Using java: $(which java)"
+java -version 2>&1 | head -3
+
+# Set Java options to avoid shared memory issues in containerized environments.
+export _JAVA_OPTIONS="-Xmx256m -Xshare:off -Djava.io.tmpdir=/tmp"
+
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
