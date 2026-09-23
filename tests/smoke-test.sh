@@ -38,10 +38,7 @@ bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
 grep -q '\"scope\":\"source-html\"' "$tmp_dir/w3c_source_html_report.json"
-grep -q '\"messages\":\\[\\]' "$tmp_dir/w3c_source_html_report.json"
-
-# vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
-# technical fault. run-w3c-validator.mjs must always exit 0 once it has
+grep -F '"messages":[]' \"$tmp_dir/w3c_source_html_report.json\"\n# technical fault. run-w3c-validator.mjs must always exit 0 once it has
 # successfully written a report, even when that report contains errors,
 # otherwise scripts/a11y-audit.sh's `set -e` aborts before QualWeb/Nu ever run.
 node scripts/run-w3c-validator.mjs tests/fixtures/inaccessible-page.html "$tmp_dir/w3c_bad_report.json" http://localhost:8000/inaccessible-page.html
