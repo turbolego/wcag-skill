@@ -38,8 +38,7 @@ bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
 grep -q '\"scope\":\"source-html\"' "$tmp_dir/w3c_source_html_report.json"
-grep -q '\"messages\":\\[\\]' "$tmp_dir/w3c_source_html_report.json"
-
+grep -q \"messages\":[]\" "$tmp_dir/w3c_source_html_report.json"\n
 # vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
 # technical fault. run-w3c-validator.mjs must always exit 0 once it has
 # successfully written a report, even when that report contains errors,
