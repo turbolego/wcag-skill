@@ -36,9 +36,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Install Nu HTML Checker
-        run: npm install --global vnu-jar
+      - name: Install dependencies
+        run: npm ci
       - name: Run bundled smoke tests
         env:
           _JAVA_OPTIONS: "-Xmx256m -Xshare:off -Djava.io.tmpdir=/tmp"
+          PATH: "./node_modules/.bin:${PATH}"
         run: bash tests/smoke-test.sh
