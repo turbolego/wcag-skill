@@ -14,20 +14,20 @@ node --check scripts/run-w3c-validator.mjs
 bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
-grep -q '"scope":"source-html"' "$tmp_dir/w3c_source_html_report.json"
-grep -q '"messages":\[\]' "$tmp_dir/w3c_source_html_report.json"
+grep -q '\"scope\":\"source-html\"' "$tmp_dir/w3c_source_html_report.json"
+grep -q '\"messages\":\\[\\]' "$tmp_dir/w3c_source_html_report.json"
 
 # vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
 # technical fault. run-w3c-validator.mjs must always exit 0 once it has
 # successfully written a report, even when that report contains errors,
 # otherwise scripts/a11y-audit.sh's `set -e` aborts before QualWeb/Nu ever run.
 node scripts/run-w3c-validator.mjs tests/fixtures/inaccessible-page.html "$tmp_dir/w3c_bad_report.json" http://localhost:8000/inaccessible-page.html
-grep -q '"type":"error"' "$tmp_dir/w3c_bad_report.json"
+grep -q '\"type\":\"error\"' "$tmp_dir/w3c_bad_report.json"
 
 python3 benchmark/scripts/check-tag-coverage.py benchmark/templates/index.html > "$tmp_dir/tag_report.txt"
 grep -q 'Missing: 0' "$tmp_dir/tag_report.txt"
 grep -q 'Balance: OK' "$tmp_dir/tag_report.txt"
-! grep -q 'UNMATCHED\|structural mismatch' "$tmp_dir/tag_report.txt"
+! grep -q 'UNMATCHED\\|structural mismatch' "$tmp_dir/tag_report.txt"
 
 # A genuinely mismatched fixture must still be reported as a real error.
 printf '<div><section><p>Hello</p></div></section>' > "$tmp_dir/broken.html"
@@ -35,24 +35,27 @@ if python3 benchmark/scripts/check-tag-coverage.py "$tmp_dir/broken.html" benchm
   echo "Expected check-tag-coverage.py to fail on a structurally mismatched fixture" >&2
   exit 1
 fi
-grep -q 'UNMATCHED\|structural mismatch' "$tmp_dir/broken_report.txt"
+grep -q 'UNMATCHED\\|structural mismatch' "$tmp_dir/broken_report.txt"
 
 # Dry run must work without a token, and must never package generated artifacts.
-mkdir -p "$tmp_dir/scripts_pycache"
-echo "bogus" > "$tmp_dir/scripts_pycache/decoy.pyc"
-trap 'rm -rf "$tmp_dir" "$tmp_dir/scripts_pycache"' EXIT
+# Create a temporary __pycache__ directory under $root/scripts to verify that
+# publish-web.py excludes __pycache__ directories.
+tmp_pycache_dir="$root/scripts/tmp_pycache_test_$$"
+mkdir -p "$tmp_pycache_dir/__pycache__"
+echo "bogus" > "$tmp_pycache_dir/__pycache__/decoy.pyc"
+trap 'rm -rf "$tmp_dir" "$tmp_pycache_dir"' EXIT
 python3 scripts/publish-web.py --dry-run > "$tmp_dir/publish_dry_run.txt"
 # Version is auto-bumped by scripts/bump-skill-version.py before every real
 # publish (see publish-web.yml / publish-to-clawhub.yml), so assert on the
 # MAJOR.MINOR.PATCH shape rather than a specific pinned value.
-grep -Eq '"version": "[0-9]+\.[0-9]+\.[0-9]+"' "$tmp_dir/publish_dry_run.txt"
-grep -q '"path": "SKILL.md"' "$tmp_dir/publish_dry_run.txt"
-grep -q '"path": "benchmark/README.md"' "$tmp_dir/publish_dry_run.txt"
-! grep -q '"path": "README.md"' "$tmp_dir/publish_dry_run.txt"
-! grep -q '"path": "skill-card.md"' "$tmp_dir/publish_dry_run.txt"
-! grep -q '"path": "tests/' "$tmp_dir/publish_dry_run.txt"
-! grep -q '__pycache__\|\.pyc"' "$tmp_dir/publish_dry_run.txt"
-! grep -q '"path": "scripts/publish-web.py"' "$tmp_dir/publish_dry_run.txt"
-! grep -q '"path": "scripts/bump-skill-version.py"' "$tmp_dir/publish_dry_run.txt"
+grep -Eq '\"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"' "$tmp_dir/publish_dry_run.txt"
+grep -q '\"path\": \"SKILL.md\"' "$tmp_dir/publish_dry_run.txt"
+grep -q '\"path\": \"benchmark/README.md\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"README.md\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"skill-card.md\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"tests/'\" "$tmp_dir/publish_dry_run.txt"
+! grep -q '__pycache__\\|\\.pyc\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"scripts/publish-web.py\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"scripts/bump-skill-version.py\"' "$tmp_dir/publish_dry_run.txt"
 
 echo "WCAG skill smoke tests passed."

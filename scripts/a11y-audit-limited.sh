@@ -11,30 +11,33 @@ if [ -r /proc/meminfo ]; then
     AVAILABLE_MEM=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
 else
     # Fallback to free -m (6th column is available memory in MB)
-    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}') 
+    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}')
 fi
 # Prefer container/cgroup memory limit over host /proc/meminfo (v1 then v2)
+# Note: We check v1 first. If v1 yields a valid limit (not unlimited and not too large), we use it.
+# If v1 is readable but yields an invalid limit (unlimited or too large), we ignore it and check v2.
+# If v1 is not readable, we check v2.
+# We only use v2 if we haven't already gotten a valid limit from v1.
 if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
     CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null)
     if [ -n "$CG_LIMIT_BYTES" ]; then
         # Check for unlimited sentinel (9223372036854775807) or unreasonably large values (>100 TB)
-        if [ "$CG_LIMIT_BYTES" -eq 9223372036854775807 ] || [ "$CG_LIMIT_BYTES" -gt 109951162777600 ]; then
-            # Treat as unlimited, ignore cgroup limit
-            :
-        else
+        if [ "$CG_LIMIT_BYTES" -ne 9223372036854775807 ] && [ "$CG_LIMIT_BYTES" -le 109951162777600 ]; then
             CG_LIMIT_MB=$(echo "$CG_LIMIT_BYTES" | awk '{print int($1/(1024*1024))}')
             if [ -n "$CG_LIMIT_MB" ] && [ "$CG_LIMIT_MB" -gt 0 ]; then
                 AVAILABLE_MEM=$CG_LIMIT_MB
             fi
         fi
-    fi
 fi
-if [ -r /sys/fs/cgroup/memory.max ]; then
-    CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
-    if [ -n "$CG_LIMIT_BYTES" ]; then
-        CG_LIMIT_MB=$(echo "$CG_LIMIT_BYTES" | awk '{if ($1+0 > 0) print int($1/(1024*1024)); else print 0}')
-        if [ -n "$CG_LIMIT_MB" ] && [ "$CG_LIMIT_MB" -gt 0 ]; then
-            AVAILABLE_MEM=$CG_LIMIT_MB
+# If we still don't have a valid memory amount from v1 (or v1 was not readable), try v2.
+if [ -z "$AVAILABLE_MEM" ] || [ "$AVAILABLE_MEM" -le 0 ]; then
+    if [ -r /sys/fs/cgroup/memory.max ]; then
+        CG_LIMIT_BYTES=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)
+        if [ -n "$CG_LIMIT_BYTES" ]; then
+            CG_LIMIT_MB=$(echo "$CG_LIMIT_BYTES" | awk '{if ($1+0 > 0) print int($1/(1024*1024)); else print 0}')
+            if [ -n "$CG_LIMIT_MB" ] && [ "$CG_LIMIT_MB" -gt 0 ]; then
+                AVAILABLE_MEM=$CG_LIMIT_MB
+            fi
         fi
     fi
 fi
