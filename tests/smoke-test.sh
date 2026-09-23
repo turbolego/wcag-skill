@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-trap 'echo "Smoke test failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
-export PATH="$PWD/node_modules/.bin:$PATH"
 # Add locally installed npm binaries to PATH
 export PATH="$PWD/node_modules/.bin:$PATH"
 
@@ -38,7 +36,8 @@ bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
 grep -q '\"scope\":\"source-html\"' "$tmp_dir/w3c_source_html_report.json"
-grep -q \"messages\":[]\" "$tmp_dir/w3c_source_html_report.json"\n
+grep -F '{\"messages\":[]}' "$tmp_dir/w3c_source_html_report.json"
+
 # vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
 # technical fault. run-w3c-validator.mjs must always exit 0 once it has
 # successfully written a report, even when that report contains errors,
@@ -76,7 +75,7 @@ grep -q '\"path\": \"benchmark/README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"skill-card.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"tests/'\" "$tmp_dir/publish_dry_run.txt"
-! grep -q '__pycache__\\|\\.pyc\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '__pycache__\\|\.pyc\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/publish-web.py\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/bump-skill-version.py\"' "$tmp_dir/publish_dry_run.txt"
 
