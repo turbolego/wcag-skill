@@ -38,9 +38,9 @@ fi
 grep -q 'UNMATCHED\\|structural mismatch' "$tmp_dir/broken_report.txt"
 
 # Dry run must work without a token, and must never package generated artifacts.
-# Create a temporary __pycache__ directory under $root/scripts to verify that
+# Create a temporary __pycache__ directory under scripts/ to verify that
 # publish-web.py excludes __pycache__ directories.
-tmp_pycache_dir="$root/scripts/tmp_pycache_test_$$"
+tmp_pycache_dir="scripts/tmp_pycache_test_$$"
 mkdir -p "$tmp_pycache_dir/__pycache__"
 echo "bogus" > "$tmp_pycache_dir/__pycache__/decoy.pyc"
 trap 'rm -rf "$tmp_dir" "$tmp_pycache_dir"' EXIT
