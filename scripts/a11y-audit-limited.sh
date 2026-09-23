@@ -11,7 +11,7 @@ if [ -r /proc/meminfo ]; then
     AVAILABLE_MEM=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
 else
     # Fallback to free -m (6th column is available memory in MB)
-    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}')
+    AVAILABLE_MEM=$(free -m | awk '/^Mem: / {print $6}') 
 fi
 # Prefer container/cgroup memory limit over host /proc/meminfo (v1 then v2)
 if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
