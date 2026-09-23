@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@axe-core/cli": "4.13.0",
-    "@qualweb/cli": "0.7.31",
+    "@qualweb/cli": "0.7.32",
     "chromedriver": "154.0.0",
     "pa11y": "9.1.1",
     "vnu-jar": "26.9.16"
