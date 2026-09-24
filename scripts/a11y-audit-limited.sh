@@ -28,6 +28,7 @@ if [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
                 AVAILABLE_MEM=$CG_LIMIT_MB
             fi
         fi
+    fi
 fi
 # If we still don't have a valid memory amount from v1 (or v1 was not readable), try v2.
 if [ -z "${CG_LIMIT_MB:-}" ] || [ "${CG_LIMIT_MB:-0}" -le 0 ]; then
