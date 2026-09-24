@@ -48,7 +48,7 @@ python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if any(m
 python3 benchmark/scripts/check-tag-coverage.py benchmark/templates/index.html > "$tmp_dir/tag_report.txt"
 grep -q 'Missing: 0' "$tmp_dir/tag_report.txt"
 grep -q 'Balance: OK' "$tmp_dir/tag_report.txt"
-! grep -q 'UNMATCHED\\|structural mismatch' "$tmp_dir/tag_report.txt"
+! grep -q 'UNMATCHED\|structural mismatch' "$tmp_dir/tag_report.txt"
 
 # A genuinely mismatched fixture must still be reported as a real error.
 printf '<div><section><p>Hello</p></div></section>' > "$tmp_dir/broken.html"

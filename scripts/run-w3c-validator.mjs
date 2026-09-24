@@ -26,9 +26,9 @@ if (result.error) {
   process.exit(69);
 }
 
-let rawReport = result.stdout.trim();
-if (result.stderr) {
-  rawReport = rawReport + '\n' + result.stderr.trim();
+const stdoutReport = result.stdout.trim();
+const stderrReport = result.stderr.trim();
+let rawReport = stdoutReport || stderrReport;
 }
 
 // Try to parse the entire rawReport as JSON first.
