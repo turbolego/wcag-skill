@@ -70,7 +70,7 @@ cat "$tmp_dir/publish_dry_run.txt" | head -5
 # Version is auto-bumped by scripts/bump-skill-version.py before every real
 # publish (see publish-web.yml / publish-to-clawhub.yml), so assert on the
 # MAJOR.MINOR.PATCH shape rather than a specific pinned value.
-grep -Eq '\"version\": \"[0-9]+\\.[0-9]+\\.[0-9]+\"' "$tmp_dir/publish_dry_run.txt"
+grep -E -q 'Version: [0-9]+\\.[0-9]+\\.[0-9]+' "$tmp_dir/publish_dry_run.txt"
 grep -q '\"path\": \"SKILL.md\"' "$tmp_dir/publish_dry_run.txt"
 grep -q '\"path\": \"benchmark/README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"README.md\"' "$tmp_dir/publish_dry_run.txt"

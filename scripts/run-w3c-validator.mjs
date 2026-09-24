@@ -29,7 +29,6 @@ if (result.error) {
 const stdoutReport = result.stdout.trim();
 const stderrReport = result.stderr.trim();
 let rawReport = stdoutReport || stderrReport;
-}
 
 // Try to parse the entire rawReport as JSON first.
 let parsed;
