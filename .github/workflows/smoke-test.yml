@@ -5,6 +5,8 @@ on:
     paths:
       - "SKILL.md"
       - "skill-card.md"
+      - "package.json"
+      - "package-lock.json"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
@@ -15,6 +17,8 @@ on:
     paths:
       - "SKILL.md"
       - "skill-card.md"
+      - "package.json"
+      - "package-lock.json"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
@@ -31,12 +35,16 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 22
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "25"
-      - name: Install Nu HTML Checker
-        run: npm install --global vnu-jar
+          java-version: "21"
+      - name: Install dependencies
+        run: npm ci
       - name: Run bundled smoke tests
-        run: bash tests/smoke-test.sh
+        env:
+          _JAVA_OPTIONS: "-Xmx256m -Xshare:off -Djava.io.tmpdir=/tmp"
+        run: |
+          set -euxo pipefail
+          bash -x tests/smoke-test.sh

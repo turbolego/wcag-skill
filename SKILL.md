@@ -80,6 +80,37 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 - Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
 - Make sure the keyboard focus indicator is visible and has sufficient contrast (AA, WCAG 2.2 SC 2.4.11 Focus Appearance: at least 2 CSS px perimeter and 3:1 contrast).
 
+## Low-memory audit guardrail (script-level)
+
+When running on hosts with <2 GB RAM or in containers, use `scripts/a11y-audit-limited.sh`. Never delete this script (see PR #12 rejection rule below).
+It reads memory from `/proc/meminfo` (MemAvailable first), falls back to `free -m` (6th column = available memory in MB), then prefers the cgroup limit (`memory.limit_in_bytes` v1 or `memory.max` v2). It ignores the v1 unlimited sentinel (`9223372036854775807`) and caps unreasonably large values. Memory limits (ulimit -v and NODE_OPTIONS) are configurable via `ULIMIT_PERCENT`/`ULIMIT_MIN_MB` and `NODE_PERCENT`/`NODE_MIN_MB` environment variables with sensible defaults, and always capped to the available budget (never exceed it). If `ulimit -v` fails, the wrapper exits with an explicit error rather than swallowing it.
+
+In extremely constrained environments (<512MB available), you may need to explicitly set `NODE_OPTIONS="--max-old-space-size=256"` before running the audit wrapper.
+
+Pitfall: never rely on host `/proc/meminfo` inside a container — verify the container's cgroup quota (v1 `memory.limit_in_bytes`, v2 `memory.max`) matches the guardrail; the wrapper checks cgroup first but host and container budgets can diverge.
+
+Pitfall: the v2 cgroup branch (`memory.max`) must be `if`, not `elif`, or a v2-only container skips the limit. Never delete `scripts/a11y-audit-limited.sh` (PR #12 guard). If `ulimit -v` fails, exit with an explicit error — do not swallow it.
+Pitfall: vnu requires Java 17+; using older Java causes `UnsupportedClassVersionError`. In CI, set `JAVA_HOME` to a Java 17+ installation and add `_JAVA_OPTIONS="-Xmx256m -Xshare:off -Djava.io.tmpdir=/tmp"` to redirect temp storage to disk and avoid shared-memory exhaustion.
+
+- See also [`references/pil-logo-grid.md`](references/pil-logo-grid.md) for the PIL circular-logo layout pattern used when updating grid images.
+
+## CI workflow maintenance
+
+Keep GitHub Actions workflows (`.github/workflows/*.yml`) in sync with the pinned tool versions in `package.json`.
+When the Chrome version on the runner changes, the `Align chromedriver to the installed Chrome major version` step must use a reliable version extraction: `chrome_major=$(/opt/hostedtoolcache/setup-chrome/chromium/stable/x64/chrome --version 2>/dev/null | grep -oE '[0-9]+' | head -1)`.
+This prevents `npm error ETARGET` when requesting a non‑existent chromedriver version.
+
+Periodically run `npm ci` in a clean environment to verify that the pinned dependencies install without errors on the target Node version (>=22).
+If you encounter heap-limit errors, increase the Node old space via `NODE_OPTIONS` (e.g., `NODE_OPTIONS="--max-old-space-size=512"`) before running `npm ci`.
+
+## CI / audit environment notes
+
+- `vnu-jar` requires Java 17 or newer; CI runners with older Java will throw `UnsupportedClassVersionError`. Set `JAVA_HOME` to a Java 17+ installation when needed.
+- `vnu` writes temporary files to `/dev/shm`. On CI runners with small shared-memory partitions, add `_JAVA_OPTIONS="-Xshare:off -Djava.io.tmpdir=/tmp -Xmx256m"` to redirect temp storage to disk and cap heap.
+- The audit wrapper (`scripts/a11y-audit-limited.sh`) reads container memory via `memory.limit_in_bytes` (v1) and `memory.max` (v2). The v2 branch must remain independent (`if`, not `elif`) so both limits are checked in environments where both files exist. When v1 returns a valid (non-sentinel, non-excessive) limit, use it; fall back to v2 only when v1 is unreadable or yields an invalid value.
+- The `scripts/run-w3c-validator.mjs` script must be able to parse vnu output that may include warning messages; it now combines stdout and stderr and extracts a JSON object if necessary.
+
+
 ## Use the right numeric target
 
 | Requirement | Baseline / AA minimum | AAA target |
@@ -88,7 +119,7 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 | Large text contrast | 3:1 | 4.5:1 |
 | UI component / focus contrast | 3:1 (AA; includes the 2.4.11 focus-appearance perimeter/contrast rule) | 3:1 |
 | Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
-| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px and no time limits on dragging |
+| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px (time limits covered by separate timing criteria) |
 
 For AA (WCAG 2.2 SC 2.4.11 Focus Appearance), make the keyboard focus indicator
 at least as large as a two-CSS-pixel perimeter of the unfocused component and
