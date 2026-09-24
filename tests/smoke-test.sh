@@ -52,11 +52,11 @@ grep -q 'Balance: OK' "$tmp_dir/tag_report.txt"
 
 # A genuinely mismatched fixture must still be reported as a real error.
 printf '<div><section><p>Hello</p></div></section>' > "$tmp_dir/broken.html"
-if python3 benchmark/scripts/check-tag-coverage.py "$tmp_dir/broken.html" benchmark/resources/html_tags.json > "$tmp_dir/broken_report.txt"; then
+if python3 benchmark/scripts/check-tag-coverage.py "$tmp_dir/broken.html" benchmark/resources/html_tags.json > "$tmp_dir/broken_report.txt" 2>&1; then
   echo "Expected check-tag-coverage.py to fail on a structurally mismatched fixture" >&2
   exit 1
 fi
-grep -q 'UNMATCHED\\|structural mismatch' "$tmp_dir/broken_report.txt"
+grep -E -q 'UNMATCHED|structural mismatch' "$tmp_dir/broken_report.txt"
 
 # Dry run must work without a token, and must never package generated artifacts.
 # Create a temporary __pycache__ directory under scripts/ to verify that
