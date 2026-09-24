@@ -5,6 +5,8 @@ on:
     paths:
       - "SKILL.md"
       - "skill-card.md"
+      - "package.json"
+      - "package-lock.json"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
@@ -15,6 +17,8 @@ on:
     paths:
       - "SKILL.md"
       - "skill-card.md"
+      - "package.json"
+      - "package-lock.json"
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
