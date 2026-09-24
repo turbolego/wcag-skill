@@ -65,7 +65,8 @@ tmp_pycache_dir="scripts/tmp_pycache_test_$$"
 mkdir -p "$tmp_pycache_dir/__pycache__"
 echo "bogus" > "$tmp_pycache_dir/__pycache__/decoy.pyc"
 trap 'rm -rf "$tmp_dir" "$tmp_pycache_dir"' EXIT
-python3 scripts/publish-web.py --dry-run > "$tmp_dir/publish_dry_run.txt"
+python3 scripts/publish-web.py --dry-run > "$tmp_dir/publish_dry_run.txt" 2>&1
+cat "$tmp_dir/publish_dry_run.txt" | head -5
 # Version is auto-bumped by scripts/bump-skill-version.py before every real
 # publish (see publish-web.yml / publish-to-clawhub.yml), so assert on the
 # MAJOR.MINOR.PATCH shape rather than a specific pinned value.
