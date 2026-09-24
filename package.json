@@ -10,7 +10,7 @@
     "@axe-core/cli": "4.13.0",
     "@qualweb/cli": "0.7.32",
     "chromedriver": "154.0.0",
-    "pa11y": "9.1.1",
+    "pa11y": "10.0.0",
     "vnu-jar": "26.9.16"
   }
 }
