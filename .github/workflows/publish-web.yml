@@ -18,6 +18,10 @@ name: Publish to ClawHub (Web Upload)
 # "pending-publication" bug, run 35492158592) can't cause a version
 # collision on the next publish. The bump is committed straight back to the
 # branch with `[skip ci]` so it doesn't re-trigger this workflow.
+# ClawHub stages accepted uploads while automated security checks run. The
+# publish job waits for the exact bumped version to become publicly available
+# and fails if it remains pending or is rejected, rather than reporting a
+# successful workflow while ClawHub still serves an older release.
 #
 # publish-to-clawhub.yml is kept as a manual (workflow_dispatch-only)
 # option. Both workflows share the `clawhub-publish` concurrency group
@@ -58,7 +62,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
 
@@ -95,19 +99,24 @@ jobs:
 
       - name: Verify live version (post-publish)
         if: ${{ success() && inputs.dry_run != true }}
+        env:
+          EXPECTED_VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          set -e
-          VERSION=$(grep -m1 '^version:' SKILL.md | sed 's/.*:\s*"*'\''*//;s/"*'\''*$//')
-          echo "Repository version: $VERSION"
-          for i in $(seq 1 12); do
+          set -euo pipefail
+          if [[ -z "$EXPECTED_VERSION" ]]; then
+            echo "::error::Version bump step did not provide an expected version"
+            exit 1
+          fi
+          echo "Expected published version: $EXPECTED_VERSION"
+          for i in $(seq 1 120); do
             LIVE=$(curl -sf https://clawhub.ai/api/v1/skills/wcag-skill \
-              | python3 -c "import json,sys; print(json.load(sys.stdin)['skill']['tags'].get('latest',''))")
+              | python3 -c 'import json,sys; latest=json.load(sys.stdin).get("latestVersion"); print(latest.get("version", "") if isinstance(latest, dict) else "")')
             echo "Poll $i: live = $LIVE"
-            if [ "$LIVE" = "$VERSION" ]; then
-              echo "✅ ClawHub is now serving version $VERSION"
+            if [[ "$LIVE" == "$EXPECTED_VERSION" ]]; then
+              echo "✅ ClawHub is now serving version $EXPECTED_VERSION"
               exit 0
             fi
             sleep 15
           done
-          echo "⚠ Live version still not updated after 3 minutes (security scan may be pending)"
-          # Don't fail — the publish was accepted, just the scan is slow
+          echo "::error::ClawHub still serves $LIVE after 30 minutes; the upload may still be pending or may have failed automated security checks."
+          exit 1

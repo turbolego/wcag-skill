@@ -195,7 +195,20 @@ def main() -> None:
         result = json.loads(resp.read())
         print(json.dumps(result, indent=2))
         if result.get("ok"):
-            print("\n✅ Published — now pending security scan.")
+            publication_status = result.get("publicationStatus", result.get("status"))
+            if publication_status == "pending":
+                print(
+                    "\n✅ Upload accepted — pending security scan; "
+                    "the release is not public yet."
+                )
+            elif publication_status == "published":
+                print("\n✅ Published and publicly available.")
+            else:
+                print(
+                    f"\n❌ Unexpected publication status: {publication_status!r}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             print(
                 f"   View: https://clawhub.ai/turbolego/skills/{SKILL_SLUG}"
             )
