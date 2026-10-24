@@ -15,8 +15,12 @@ evidence, not proof of conformance.
 | `SKILL.md` | Production workflow and accessible-by-default rules |
 | `skill-card.md` | Release record covering purpose, dependencies, risks, outputs, evidence, and ethical considerations |
 | `scripts/a11y-audit.sh` | Tested wrapper for axe, Pa11y, QualWeb, and Nu reports |
+| `scripts/check-wcag-412.py` | Static source-markup inventory of likely interactive and stateful WCAG 4.1.2 components |
 | `references/aaa-evidence-matrix.md` | WCAG 2.2 AAA evidence template and applicability prompts |
 | `references/manual-test-protocol.md` | Required keyboard, reflow, focus, state, media, and assistive-technology checks |
+| `references/dynamic-state-test-protocol.md` | WCAG 4.1.2 inventory, interaction evidence, and assistive-technology review |
+| `templates/playwright-state.spec.ts` | Playwright example for testing programmatic and application state together |
+| `docs/index.html` | GitHub Pages site with interactive before-and-after WCAG 2.2 demos |
 | `benchmark/` | Optional AI-WCAG-Gauntlet extension; not a production conformance gate |
 | `tests/` | Fixture and CI smoke test for documented bundled commands |
 
@@ -57,6 +61,31 @@ npm ci
 The audit wrapper looks for CLIs installed locally (`./node_modules/.bin`) or
 globally. Prefix commands with `npx` or add `./node_modules/.bin` to `PATH`
 if you installed locally.
+
+The standard-library WCAG 4.1.2 source inventory can be tested independently:
+
+```bash
+python3 tests/test-wcag-412-checker.py
+```
+
+Open [`tests/fixtures/wcag-412-stateful-page.html`](tests/fixtures/wcag-412-stateful-page.html)
+in a browser to try the dark-theme toggle with missing state and the corrected
+`aria-pressed` version side by side.
+
+## GitHub Pages demos
+
+The interactive demo site lives in [`docs/index.html`](docs/index.html). To
+preview it locally, run:
+
+```bash
+python3 -m http.server 8000 --directory docs
+```
+
+Then open `http://localhost:8000`. To publish it from GitHub Pages, select
+**Settings → Pages → Deploy from a branch**, choose the `main` branch and
+`/docs` as the folder. The site includes intentionally flawed examples; they
+are labelled and paired with improved implementations. The docs folder is
+excluded from the installable skill package.
 
 ## Audit a page
 
