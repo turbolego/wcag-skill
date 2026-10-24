@@ -425,7 +425,7 @@
                 <p class="after-label">After · review and confirmation</p>
                 <h3 id="order-after-title">Review before confirming</h3>
                 <label for="order-quantity">Quantity (1–10)</label>
-                <input id="order-quantity" type="number" min="1" max="10" value="1">
+                <input id="order-quantity" type="number" min="1" max="10" value="1" required>
                 <p>Sample total: <span id="order-total">$49.00</span></p>
                 <button id="review-order" type="button">Review sample order</button>
                 <div id="order-review" class="transaction-review" hidden>
@@ -500,28 +500,51 @@
       });
       const orderQuantity = document.querySelector("#order-quantity");
       const orderTotal = document.querySelector("#order-total");
+      const orderReview = document.querySelector("#order-review");
+      const orderAfterStatus = document.querySelector("#order-after-status");
       const pricePerItem = 49;
       const formatTotal = (quantity) => `$${(quantity * pricePerItem).toFixed(2)}`;
+      let reviewedQuantity = null;
+
       orderQuantity.addEventListener("input", () => {
         orderTotal.textContent = formatTotal(Number(orderQuantity.value) || 0);
+        if (!orderReview.hidden) {
+          orderReview.hidden = true;
+          reviewedQuantity = null;
+          orderAfterStatus.textContent =
+            "The quantity changed. Review the order again before confirming.";
+        }
       });
+
       document.querySelector("#review-order").addEventListener("click", () => {
         if (!orderQuantity.reportValidity()) return;
+        reviewedQuantity = orderQuantity.value;
         document.querySelector("#review-quantity").textContent = orderQuantity.value;
         document.querySelector("#review-total").textContent =
           formatTotal(Number(orderQuantity.value));
-        document.querySelector("#order-review").hidden = false;
-        document.querySelector("#order-after-status").textContent = "Review the details before confirming.";
+        orderReview.hidden = false;
+        orderAfterStatus.textContent = "Review the details before confirming.";
         document.querySelector("#confirm-order").focus();
       });
+
       document.querySelector("#edit-order").addEventListener("click", () => {
-        document.querySelector("#order-review").hidden = true;
-        document.querySelector("#order-after-status").textContent = "You can edit the sample order.";
+        orderReview.hidden = true;
+        reviewedQuantity = null;
+        orderAfterStatus.textContent = "You can edit the sample order.";
         orderQuantity.focus();
       });
+
       document.querySelector("#confirm-order").addEventListener("click", () => {
-        document.querySelector("#order-review").hidden = true;
-        document.querySelector("#order-after-status").textContent =
+        if (orderReview.hidden || reviewedQuantity !== orderQuantity.value) {
+          orderReview.hidden = true;
+          reviewedQuantity = null;
+          orderAfterStatus.textContent =
+            "The order changed. Review the details again before confirming.";
+          return;
+        }
+        orderReview.hidden = true;
+        reviewedQuantity = null;
+        orderAfterStatus.textContent =
           `Sample order for ${orderQuantity.value} item(s) confirmed. No payment was made.`;
         document.querySelector("#review-order").focus();
       });

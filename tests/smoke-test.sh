@@ -80,7 +80,10 @@ grep -q '\"path\": \"benchmark/README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"skill-card.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"tests/'\" "$tmp_dir/publish_dry_run.txt"
-! grep -q '\"path\": \"docs/'\" "$tmp_dir/publish_dry_run.txt"
+if grep -Fq '"path": "docs/' "$tmp_dir/publish_dry_run.txt"; then
+  echo "The docs/ demo site must not be included in the published skill package" >&2
+  exit 1
+fi
 ! grep -q '__pycache__\\|\.pyc\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/publish-web.py\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/bump-skill-version.py\"' "$tmp_dir/publish_dry_run.txt"

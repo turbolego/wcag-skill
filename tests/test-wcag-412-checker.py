@@ -12,6 +12,11 @@ DEMO_PAGE = ROOT / "docs/index.html"
 
 
 class Wcag412CheckerTests(unittest.TestCase):
+    def test_fixture_declares_english_document_language(self):
+        markup = FIXTURE.read_text(encoding="utf-8")
+
+        self.assertIn('<html lang="en">', markup)
+
     def test_inventories_stateful_and_static_controls_without_claiming_conformance(self):
         result = subprocess.run(
             [sys.executable, str(CHECKER), str(FIXTURE), "--json"],
