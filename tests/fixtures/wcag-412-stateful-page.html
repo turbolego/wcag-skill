@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WCAG 4.1.2 interactive example</title>
+    <style>
+      html { color-scheme: light; }
+      body {
+        margin: 0;
+        background: #f3f6fb;
+        color: #172033;
+        font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+      h1 { margin-top: 0; }
+      .theme-demos { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 1rem; }
+      main.compact { max-width: 32rem; }
+      .theme-demo { border: 1px solid #aab4c2; border-radius: 0.75rem; background: #fff; padding: 1.25rem; }
+      .theme-demo.is-dark { border-color: #222; background: #222; color: #fff; }
+      .theme-demo button { min-height: 2.75rem; padding: 0.5rem 0.85rem; font: inherit; cursor: pointer; }
+      :focus-visible { outline: 3px solid #2457c5; outline-offset: 3px; }
+      @media (max-width: 600px) { main { padding: 1rem; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>WCAG 4.1.2: Dark theme toggle</h1>
+      <div class="theme-demos">
+        <section id="theme-demo-broken" class="theme-demo" aria-labelledby="broken-heading">
+          <h2 id="broken-heading">Without correct state</h2>
+          <p>Try the button with a mouse or keyboard. The theme changes, but the button does not expose its state.</p>
+          <button id="theme-toggle-broken" type="button" data-wcag-412-dynamic>Dark theme</button>
+          <p>ARIA state: <code>missing</code>. Appearance: <output id="broken-theme-output">light</output>.</p>
+        </section>
+        <section id="theme-demo-correct" class="theme-demo" aria-labelledby="correct-heading">
+          <h2 id="correct-heading">With correct state</h2>
+          <p>Try the same action here. <code>aria-pressed</code> reflects the button state.</p>
+          <button id="theme-toggle" type="button" aria-pressed="false">Dark theme</button>
+          <p>Exposed state and appearance: <output id="theme-state-output">aria-pressed=false; theme=light</output>.</p>
+        </section>
+      </div>
+      <label><input type="checkbox" name="notifications"> Notifications</label>
+      <details>
+        <summary>More information</summary>
+        <p>This content can be expanded and collapsed.</p>
+      </details>
+      <button id="custom-control" type="button" role="switch" aria-checked="false" data-wcag-412-dynamic>Compact layout</button>
+      <p id="compact-state">Compact layout is off.</p>
+      <div id="status" role="status" aria-live="polite"></div>
+      <button type="button">Save</button>
+      <input type="hidden" name="csrf-token" value="fixture">
+    </main>
+    <script>
+      const brokenDemo = document.querySelector("#theme-demo-broken");
+      const brokenOutput = document.querySelector("#broken-theme-output");
+      document.querySelector("#theme-toggle-broken").addEventListener("click", () => {
+        const dark = brokenDemo.classList.toggle("is-dark");
+        brokenOutput.textContent = dark ? "dark" : "light";
+      });
+
+      const correctDemo = document.querySelector("#theme-demo-correct");
+      const toggle = document.querySelector("#theme-toggle");
+      toggle.addEventListener("click", () => {
+        const pressed = toggle.getAttribute("aria-pressed") === "true";
+        toggle.setAttribute("aria-pressed", String(!pressed));
+        correctDemo.classList.toggle("is-dark", !pressed);
+        document.querySelector("#theme-state-output").textContent =
+          `aria-pressed=${!pressed}; theme=${pressed ? "light" : "dark"}`;
+      });
+      const compactToggle = document.querySelector("#custom-control");
+      compactToggle.addEventListener("click", () => {
+        const checked = compactToggle.getAttribute("aria-checked") === "true";
+        compactToggle.setAttribute("aria-checked", String(!checked));
+        document.querySelector("main").classList.toggle("compact", !checked);
+        document.querySelector("#compact-state").textContent =
+          `Compact layout is ${checked ? "off" : "on"}.`;
+      });
+    </script>
+  </body>
+</html>

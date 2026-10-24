@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Interactive WCAG 2.2 AAA accessibility examples showing common issues and improved implementations.">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>WCAG Skill | Interactive WCAG 2.2 AAA demos</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #18243a;
+        background: #f5f7fb;
+        line-height: 1.6;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      a { color: #0645ad; }
+      a:hover { text-decoration-thickness: 2px; }
+      button, input { font: inherit; }
+      input[type="number"] { min-height: 44px; padding: 0.4rem; }
+      button, input[type="radio"] { accent-color: #174ea6; }
+      button { min-height: 44px; padding: 0.55rem 0.9rem; cursor: pointer; }
+      :focus-visible { outline: 3px solid #005fcc; outline-offset: 3px; }
+      [hidden] { display: none !important; }
+
+      .skip-link {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        z-index: 2;
+        transform: translateY(-180%);
+        padding: 0.65rem 1rem;
+        background: #fff;
+        border: 2px solid #18243a;
+      }
+      .skip-link:focus { transform: translateY(0); }
+      .site-header { background: #102448; color: #fff; }
+      .header-inner, main, .footer-inner {
+        width: min(100% - 2rem, 1160px);
+        margin-inline: auto;
+      }
+      .header-inner {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .brand { color: #fff; font-size: 1.1rem; font-weight: 750; text-decoration: none; }
+      .site-nav { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+      .site-nav a { color: #fff; }
+      main { padding-block: 2.5rem 4rem; }
+      .hero { max-width: 850px; margin-bottom: 2rem; }
+      .eyebrow {
+        margin: 0 0 0.5rem;
+        color: #344c72;
+        font-size: 0.82rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 { max-width: 19ch; margin: 0; font-size: clamp(2.1rem, 5vw, 3.7rem); line-height: 1.08; }
+      h2 { line-height: 1.2; }
+      .hero-intro { max-width: 72ch; margin-block: 1rem; font-size: 1.15rem; }
+      .notice {
+        margin-block: 1.25rem;
+        padding: 1rem 1.2rem;
+        background: #fff8e5;
+        border-left: 5px solid #9b5c00;
+        border-radius: 0.5rem;
+      }
+      .notice strong { display: block; }
+      .skill-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-block: 1.5rem 2.5rem;
+        padding: 0;
+        list-style: none;
+      }
+      .skill-steps li {
+        padding: 0.85rem;
+        background: #e9eef8;
+        border-radius: 0.5rem;
+      }
+      .skill-steps strong { display: block; }
+      .demo-list { display: grid; gap: 1.25rem; }
+      .demo-card {
+        padding: clamp(1rem, 3vw, 1.6rem);
+        background: #fff;
+        border: 1px solid #c7d0df;
+        border-radius: 0.8rem;
+        box-shadow: 0 0.2rem 0.8rem #1427470a;
+      }
+      .demo-card h2 { margin: 0; font-size: 1.45rem; }
+      .criterion {
+        display: inline-block;
+        margin-bottom: 0.5rem;
+        padding: 0.16rem 0.55rem;
+        color: #173d77;
+        background: #e5eefb;
+        border-radius: 99px;
+        font-size: 0.8rem;
+        font-weight: 750;
+      }
+      .demo-intro { max-width: 78ch; margin: 0.5rem 0 1rem; color: #35445c; }
+      .before-after { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      .example {
+        min-width: 0;
+        padding: 1rem;
+        border: 1px solid #b8c3d3;
+        border-radius: 0.6rem;
+      }
+      .example h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+      .example p:first-of-type { margin-top: 0; }
+      .example p:last-child { margin-bottom: 0; }
+      .before-label, .after-label { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+      .before-label { color: #8a261f; }
+      .after-label { color: #17633b; }
+      .status-line { min-height: 1.6em; font-weight: 650; }
+      .code-value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      .theme-demo { background: #fff; color: #18243a; }
+      .theme-demo.is-dark { background: #222; color: #fff; }
+      .theme-demo.is-dark code { color: #fff; }
+      .theme-demo.is-dark .before-label { color: #ffb4ad; }
+      .theme-demo.is-dark .after-label { color: #8ce0ac; }
+      .contrast-before { color: #767676; background: #fff; }
+      .contrast-after { color: #1b1b1b; background: #fff; }
+      .focus-before:focus-visible { outline: 1px dotted #999; outline-offset: 0; }
+      .focus-after:focus-visible { outline: 3px solid #005fcc; outline-offset: 4px; }
+      .target-before { width: 24px; height: 24px; min-height: 24px; padding: 0; }
+      .target-after { width: 48px; height: 48px; min-height: 48px; padding: 0; }
+      .target-mark { display: inline-block; width: 0.65rem; height: 0.65rem; background: currentColor; border-radius: 50%; vertical-align: middle; }
+      .target-line { display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; }
+      .keyboard-before {
+        display: inline-block;
+        padding: 0.6rem 0.85rem;
+        border: 1px solid #667085;
+        border-radius: 0.25rem;
+        background: #e6e8ec;
+        color: #172033;
+        cursor: pointer;
+      }
+      .keyboard-before.is-active, .keyboard-after.is-active { background: #dcebdc; }
+      .reading-sample {
+        max-width: 80ch;
+        padding: 1rem;
+        background: #fff;
+        color: #18243a;
+        text-align: left;
+        line-height: 1.5;
+      }
+      .reading-sample p { margin-block: 0 1.5em; }
+      .reading-sample p:last-child { margin-bottom: 0; }
+      .reading-sample[data-palette="dark"] { background: #102448; color: #fff; }
+      .palette-options { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; margin-block: 0.5rem 1rem; }
+      fieldset { border: 1px solid #aeb9c8; border-radius: 0.5rem; }
+      .transaction-review { margin-block: 1rem; padding: 1rem; background: #eef3fa; border-radius: 0.5rem; }
+      .button-row { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+      .site-footer { padding-block: 1.5rem; color: #fff; background: #102448; }
+      .site-footer a { color: #fff; }
+      .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem; }
+
+      @media (max-width: 760px) {
+        .skill-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .before-after { grid-template-columns: 1fr; }
+        .header-inner { align-items: flex-start; flex-direction: column; padding-block: 0.8rem; }
+      }
+      @media (max-width: 420px) {
+        .skill-steps { grid-template-columns: 1fr; }
+        .header-inner, main, .footer-inner { width: min(100% - 1.25rem, 1160px); }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to demos</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#top">WCAG Skill Demos</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="#demos">Demos</a>
+          <a href="#how-it-works">How the skill works</a>
+          <a href="https://github.com/turbolego/wcag-skill">GitHub repository</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="page-title">
+        <p class="eyebrow">Interactive, local-first examples</p>
+        <h1 id="page-title">See accessibility fixes in action</h1>
+        <p class="hero-intro">
+          Compare intentionally flawed examples with improved implementations.
+          Each example explains the user impact and lets you try the change with
+          a pointer or keyboard.
+        </p>
+        <div class="notice">
+          <strong>These examples are demonstrations, not a conformance claim.</strong>
+          WCAG 2.2 AAA includes every applicable Level A and AA criterion as
+          well as AAA. A real audit must cover the complete site, all relevant
+          states, and assistive technology. WCAG 4.1.2 is Level A and is shown
+          because it is inherited by an AAA target.
+        </div>
+      </section>
+
+      <section id="how-it-works" aria-labelledby="how-title">
+        <h2 id="how-title">How the WCAG skill approaches a fix</h2>
+        <ol class="skill-steps">
+          <li><strong>1. Inventory</strong>Identify routes, controls, states, and applicable criteria.</li>
+          <li><strong>2. Improve</strong>Prefer native HTML and repair names, roles, values, and interaction.</li>
+          <li><strong>3. Verify</strong>Run automated checks plus focused keyboard and state tests.</li>
+          <li><strong>4. Record</strong>Keep evidence and human-review items; do not overclaim.</li>
+        </ol>
+        <p>
+          See the <a href="https://github.com/turbolego/wcag-skill/blob/main/SKILL.md">skill workflow</a>,
+          <a href="https://github.com/turbolego/wcag-skill/blob/main/references/aaa-evidence-matrix.md">AAA evidence matrix</a>,
+          and <a href="https://github.com/turbolego/wcag-skill/blob/main/references/manual-test-protocol.md">manual test protocol</a>.
+        </p>
+      </section>
+
+      <section id="demos" aria-labelledby="demos-title">
+        <h2 id="demos-title">Before and after examples</h2>
+        <div class="demo-list">
+          <article class="demo-card" id="demo-412" aria-labelledby="title-412">
+            <span class="criterion">4.1.2 · Name, Role, Value · Level A (inherited)</span>
+            <h2 id="title-412">A toggle must expose its state</h2>
+            <p class="demo-intro">
+              Click each “Dark theme” button. Both change the appearance, but
+              only the improved button exposes and updates its pressed state.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example theme-demo" id="theme-before" aria-labelledby="theme-before-title">
+                <p class="before-label">Before · state missing</p>
+                <h3 id="theme-before-title">Not programmatically exposed</h3>
+                <button id="theme-before-button" type="button" data-wcag-412-dynamic>Dark theme</button>
+                <p class="status-line">ARIA state: <span class="code-value">missing</span> · Appearance: <span id="theme-before-value">light</span></p>
+              </section>
+              <section role="group" class="example theme-demo" id="theme-after" aria-labelledby="theme-after-title">
+                <p class="after-label">After · state synchronized</p>
+                <h3 id="theme-after-title">Pressed state exposed</h3>
+                <button id="theme-after-button" type="button" aria-pressed="false">Dark theme</button>
+                <p class="status-line">Button state: <span id="theme-after-state">aria-pressed=false</span> · Appearance: <span id="theme-after-value">light</span></p>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-146" aria-labelledby="title-146">
+            <span class="criterion">1.4.6 · Contrast (Enhanced) · Level AAA</span>
+            <h2 id="title-146">Normal text needs at least 7:1 contrast</h2>
+            <p class="demo-intro">
+              The before sample is approximately 4.54:1: enough for AA normal
+              text, but below this AAA criterion. The improved sample exceeds 7:1.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example contrast-before" aria-labelledby="contrast-before-title">
+                <p class="before-label">Before · AA-level contrast</p>
+                <h3 id="contrast-before-title">Account settings</h3>
+                <p>Update your contact preferences and notification details.</p>
+                <strong>Contrast ratio: approximately 4.54:1</strong>
+              </section>
+              <section role="group" class="example contrast-after" aria-labelledby="contrast-after-title">
+                <p class="after-label">After · AAA contrast</p>
+                <h3 id="contrast-after-title">Account settings</h3>
+                <p>Update your contact preferences and notification details.</p>
+                <strong>Contrast ratio: approximately 17.2:1</strong>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-2413" aria-labelledby="title-2413">
+            <span class="criterion">2.4.13 · Focus Appearance · Level AAA</span>
+            <h2 id="title-2413">A visible focus indicator needs enough area and contrast</h2>
+            <p class="demo-intro">
+              Use Tab to focus both buttons. The before indicator is a thin,
+              low-contrast dotted line. The improved indicator is 3 CSS pixels
+              thick with strong contrast against the page.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="focus-before-title">
+                <p class="before-label">Before · insufficient indicator</p>
+                <h3 id="focus-before-title">Focus is easy to miss</h3>
+                <button class="focus-before" type="button">Focus this button</button>
+              </section>
+              <section role="group" class="example" aria-labelledby="focus-after-title">
+                <p class="after-label">After · enhanced indicator</p>
+                <h3 id="focus-after-title">Focus is clearly visible</h3>
+                <button class="focus-after" type="button">Focus this button</button>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-255" aria-labelledby="title-255">
+            <span class="criterion">2.5.5 · Target Size (Enhanced) · Level AAA</span>
+            <h2 id="title-255">Pointer targets should be at least 44 × 44 CSS pixels</h2>
+            <p class="demo-intro">
+              The small target is 24 × 24 pixels; the improved target is 48 × 48.
+              Activate either one to see that its hit area works.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="target-before-title">
+                <p class="before-label">Before · 24 × 24</p>
+                <h3 id="target-before-title">Small hit area</h3>
+                <div class="target-line">
+                  <button class="target-before" type="button" aria-label="Activate the small target">
+                    <span class="target-mark" aria-hidden="true"></span>
+                  </button>
+                  <span id="small-target-status">Not activated</span>
+                </div>
+              </section>
+              <section role="group" class="example" aria-labelledby="target-after-title">
+                <p class="after-label">After · 48 × 48</p>
+                <h3 id="target-after-title">Larger hit area</h3>
+                <div class="target-line">
+                  <button class="target-after" type="button" aria-label="Activate the large target">
+                    <span class="target-mark" aria-hidden="true"></span>
+                  </button>
+                  <span id="large-target-status">Not activated</span>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-213" aria-labelledby="title-213">
+            <span class="criterion">2.1.3 · Keyboard (No Exception) · Level AAA</span>
+            <h2 id="title-213">Every function must work from the keyboard</h2>
+            <p class="demo-intro">
+              Tab to the first example and press Enter or Space: it receives
+              focus but does not activate. The native button works with both keys.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="keyboard-before-title">
+                <p class="before-label">Before · pointer-only handler</p>
+                <h3 id="keyboard-before-title">Keyboard activation is missing</h3>
+                <div id="keyboard-before" class="keyboard-before" tabindex="0">Activate example</div>
+                <p class="status-line" id="keyboard-before-status">Not activated</p>
+              </section>
+              <section role="group" class="example" aria-labelledby="keyboard-after-title">
+                <p class="after-label">After · native button</p>
+                <h3 id="keyboard-after-title">Mouse and keyboard both work</h3>
+                <button id="keyboard-after" class="keyboard-after" type="button">Activate example</button>
+                <p class="status-line" id="keyboard-after-status">Not activated</p>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-148" aria-labelledby="title-148">
+            <span class="criterion">1.4.8 · Visual Presentation · Level AAA</span>
+            <h2 id="title-148">Let readers choose a usable presentation</h2>
+            <p class="demo-intro">
+              The improved example provides user-selectable foreground and
+              background colors and keeps the text measure to 80 characters or
+              fewer. This illustrates these parts of 1.4.8, not every requirement.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="reading-before-title">
+                <p class="before-label">Before · fixed presentation</p>
+                <h3 id="reading-before-title">Colors cannot be changed</h3>
+                <div class="reading-sample">
+                  <p>Readers have no control over the colors or width of this text.</p>
+                </div>
+              </section>
+              <section role="group" class="example" aria-labelledby="reading-after-title">
+                <p class="after-label">After · user-selectable presentation</p>
+                <h3 id="reading-after-title">Choose a color presentation</h3>
+                <fieldset>
+                  <legend>Text and background colors</legend>
+                  <div class="palette-options">
+                    <label><input type="radio" name="reading-palette" value="light" checked> Dark text on white</label>
+                    <label><input type="radio" name="reading-palette" value="dark"> White text on navy</label>
+                  </div>
+                </fieldset>
+                <div id="reading-sample" class="reading-sample" data-palette="light">
+                  <p>Readers can choose a foreground and background combination that works for them.</p>
+                  <p>The text stays left aligned and within a readable line length.</p>
+                </div>
+              </section>
+            </div>
+          </article>
+
+          <article class="demo-card" id="demo-249" aria-labelledby="title-249">
+            <span class="criterion">2.4.9 · Link Purpose (Link Only) · Level AAA</span>
+            <h2 id="title-249">A link should make sense on its own</h2>
+            <p class="demo-intro">
+              Read each link without its surrounding sentence. The improved
+              link identifies its destination directly.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="link-before-title">
+                <p class="before-label">Before · ambiguous link text</p>
+                <h3 id="link-before-title">Account details</h3>
+                <p>For information about refunds, click <a href="#refund-policy">More</a>.</p>
+              </section>
+              <section role="group" class="example" aria-labelledby="link-after-title">
+                <p class="after-label">After · descriptive link text</p>
+                <h3 id="link-after-title">Account details</h3>
+                <p><a href="#refund-policy">Read the full refund policy</a>.</p>
+              </section>
+            </div>
+            <p id="refund-policy"><strong>Refund policy:</strong> This demo policy explains how to request a refund.</p>
+          </article>
+
+          <article class="demo-card" id="demo-336" aria-labelledby="title-336">
+            <span class="criterion">3.3.6 · Error Prevention (All) · Level AAA</span>
+            <h2 id="title-336">Give users a chance to review important submissions</h2>
+            <p class="demo-intro">
+              For financial, legal, test, or data-changing submissions, users
+              need a way to review, correct, or reverse the action. These controls
+              are simulations and do not submit or charge anything.
+            </p>
+            <div class="before-after">
+              <section role="group" class="example" aria-labelledby="order-before-title">
+                <p class="before-label">Before · immediate action</p>
+                <h3 id="order-before-title">No review step</h3>
+                <label for="quantity-before">Quantity (1–10)</label>
+                <input id="quantity-before" type="number" min="1" max="10" value="1">
+                <p>Sample total: $49.00 per item</p>
+                <button id="order-before" type="button">Place sample order now</button>
+                <p class="status-line" id="order-before-status" aria-live="polite">No order submitted.</p>
+              </section>
+              <section role="group" class="example" aria-labelledby="order-after-title">
+                <p class="after-label">After · review and confirmation</p>
+                <h3 id="order-after-title">Review before confirming</h3>
+                <label for="order-quantity">Quantity (1–10)</label>
+                <input id="order-quantity" type="number" min="1" max="10" value="1">
+                <p>Sample total: <span id="order-total">$49.00</span></p>
+                <button id="review-order" type="button">Review sample order</button>
+                <div id="order-review" class="transaction-review" hidden>
+                  <p><strong>Review:</strong> Sample order · Quantity <span id="review-quantity">1</span> · Total <span id="review-total">$49.00</span></p>
+                  <div class="button-row">
+                    <button id="edit-order" type="button">Edit order</button>
+                    <button id="confirm-order" type="button">Confirm sample order</button>
+                  </div>
+                </div>
+                <p class="status-line" id="order-after-status" aria-live="polite">No order submitted.</p>
+              </section>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <span>WCAG Skill · Demonstrations only; automated results are evidence, not proof.</span>
+        <a href="https://github.com/turbolego/wcag-skill">View the source on GitHub</a>
+      </div>
+    </footer>
+
+    <script>
+      const themeBefore = document.querySelector("#theme-before");
+      const themeBeforeValue = document.querySelector("#theme-before-value");
+      document.querySelector("#theme-before-button").addEventListener("click", () => {
+        const dark = themeBefore.classList.toggle("is-dark");
+        themeBeforeValue.textContent = dark ? "dark" : "light";
+      });
+
+      const themeAfter = document.querySelector("#theme-after");
+      const themeAfterButton = document.querySelector("#theme-after-button");
+      themeAfterButton.addEventListener("click", () => {
+        const pressed = themeAfterButton.getAttribute("aria-pressed") === "true";
+        themeAfterButton.setAttribute("aria-pressed", String(!pressed));
+        themeAfter.classList.toggle("is-dark", !pressed);
+        document.querySelector("#theme-after-state").textContent = `aria-pressed=${!pressed}`;
+        document.querySelector("#theme-after-value").textContent = !pressed ? "dark" : "light";
+      });
+
+      document.querySelectorAll(".target-before, .target-after").forEach((button) => {
+        button.addEventListener("click", () => {
+          const statusId = button.classList.contains("target-before")
+            ? "#small-target-status"
+            : "#large-target-status";
+          document.querySelector(statusId).textContent = "Activated";
+        });
+      });
+
+      const keyboardBefore = document.querySelector("#keyboard-before");
+      keyboardBefore.addEventListener("click", () => {
+        keyboardBefore.classList.toggle("is-active");
+        document.querySelector("#keyboard-before-status").textContent = "Activated by pointer only";
+      });
+      document.querySelector("#keyboard-after").addEventListener("click", () => {
+        document.querySelector("#keyboard-after").classList.toggle("is-active");
+        document.querySelector("#keyboard-after-status").textContent = "Activated by pointer or keyboard";
+      });
+
+      document.querySelectorAll('input[name="reading-palette"]').forEach((input) => {
+        input.addEventListener("change", () => {
+          document.querySelector("#reading-sample").dataset.palette = input.value;
+        });
+      });
+
+      document.querySelector("#order-before").addEventListener("click", () => {
+        const quantity = document.querySelector("#quantity-before").value;
+        document.querySelector("#order-before-status").textContent =
+          `Sample order for ${quantity} item(s) submitted immediately. No payment was made.`;
+      });
+      const orderQuantity = document.querySelector("#order-quantity");
+      const orderTotal = document.querySelector("#order-total");
+      const pricePerItem = 49;
+      const formatTotal = (quantity) => `$${(quantity * pricePerItem).toFixed(2)}`;
+      orderQuantity.addEventListener("input", () => {
+        orderTotal.textContent = formatTotal(Number(orderQuantity.value) || 0);
+      });
+      document.querySelector("#review-order").addEventListener("click", () => {
+        if (!orderQuantity.reportValidity()) return;
+        document.querySelector("#review-quantity").textContent = orderQuantity.value;
+        document.querySelector("#review-total").textContent =
+          formatTotal(Number(orderQuantity.value));
+        document.querySelector("#order-review").hidden = false;
+        document.querySelector("#order-after-status").textContent = "Review the details before confirming.";
+        document.querySelector("#confirm-order").focus();
+      });
+      document.querySelector("#edit-order").addEventListener("click", () => {
+        document.querySelector("#order-review").hidden = true;
+        document.querySelector("#order-after-status").textContent = "You can edit the sample order.";
+        orderQuantity.focus();
+      });
+      document.querySelector("#confirm-order").addEventListener("click", () => {
+        document.querySelector("#order-review").hidden = true;
+        document.querySelector("#order-after-status").textContent =
+          `Sample order for ${orderQuantity.value} item(s) confirmed. No payment was made.`;
+        document.querySelector("#review-order").focus();
+      });
+    </script>
+  </body>
+</html>

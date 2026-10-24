@@ -31,12 +31,16 @@ trap 'rm -rf "$tmp_dir"' EXIT
 python3 -m py_compile benchmark/scripts/check-tag-coverage.py
 python3 tests/test-publish-web.py
 python3 tests/test-bump-skill-version.py
+python3 tests/test-wcag-412-checker.py
 node --check scripts/run-w3c-validator.mjs
 bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
 grep -q '\"scope\":\"source-html\"' "$tmp_dir/w3c_source_html_report.json"
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("messages")==[] else 1)' "$tmp_dir/w3c_source_html_report.json"
+
+node scripts/run-w3c-validator.mjs docs/index.html "$tmp_dir/w3c_pages_report.json" https://turbolego.github.io/wcag-skill/
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("messages")==[] else 1)' "$tmp_dir/w3c_pages_report.json"
 
 # vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
 # technical fault. run-w3c-validator.mjs must always exit 0 once it has
@@ -76,6 +80,7 @@ grep -q '\"path\": \"benchmark/README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"README.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"skill-card.md\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"tests/'\" "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"docs/'\" "$tmp_dir/publish_dry_run.txt"
 ! grep -q '__pycache__\\|\.pyc\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/publish-web.py\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/bump-skill-version.py\"' "$tmp_dir/publish_dry_run.txt"

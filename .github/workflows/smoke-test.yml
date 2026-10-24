@@ -10,7 +10,9 @@ on:
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
+      - "docs/**"
       - "tests/**"
+      - ".clawhubignore"
       - ".github/workflows/smoke-test.yml"
   push:
     branches: [main]
@@ -22,7 +24,9 @@ on:
       - "scripts/**"
       - "references/**"
       - "benchmark/**"
+      - "docs/**"
       - "tests/**"
+      - ".clawhubignore"
       - ".github/workflows/smoke-test.yml"
 
 permissions:
