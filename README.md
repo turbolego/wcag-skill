@@ -2,7 +2,7 @@
 
 ## install from Clawhub.ai: https://clawhub.ai/turbolego/skills/wcag-skill
 
-[![Version](https://img.shields.io/badge/version-2.0.16-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
+[![Version](https://img.shields.io/badge/version-2.0.17-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
 An agent skill for building, auditing, and repairing WCAG 2.2 web content.
