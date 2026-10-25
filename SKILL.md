@@ -79,6 +79,13 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 - Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
 - Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
 - Make sure the keyboard focus indicator is visible and has sufficient contrast (AA, WCAG 2.2 SC 2.4.11 Focus Appearance: at least 2 CSS px perimeter and 3:1 contrast).
+- For WCAG 4.1.2, inventory interactive components and dynamic states. Use
+  [`scripts/check-wcag-412.py`](scripts/check-wcag-412.py) as a source-markup
+  candidate check, then verify rendered name, role, value, and state. Any
+  user-triggered state change requires a before/after interaction test; axe,
+  Pa11y, QualWeb, and a static inventory alone cannot establish that it works.
+  Follow [`references/dynamic-state-test-protocol.md`](references/dynamic-state-test-protocol.md)
+  and record `DYNAMIC TEST REQUIRED` until the transition is tested.
 
 ## Low-memory audit guardrail (script-level)
 
@@ -148,6 +155,21 @@ component is obscured by author-created content.
 
 5. For AAA, complete the mandatory manual protocol and evidence matrix before
    any conformance statement.
+
+### WCAG 4.1.2 dynamic-state check
+
+Run the source-markup inventory as a prompt for review, not as a conformance
+result:
+
+```bash
+python3 scripts/check-wcag-412.py path/to/page.html
+```
+
+Inspect every reported component in the rendered page. For each stateful
+component, test the initial state, activate it with the supported input, and
+verify both the programmatic state and the corresponding UI change. Include
+keyboard activation and assistive-technology review for custom widgets or
+announcements whose meaning depends on context.
 
 ## Report precisely
 

@@ -59,3 +59,20 @@ Focus Not Obscured (Minimum), 2.5.7 Dragging Movements, 2.5.8 Target Size
 (Minimum), 3.2.6 Consistent Help, 3.3.7 Redundant Entry, and 3.3.8 Accessible
 Authentication (Minimum). Consult the W3C Quick Reference for the full
 inherited set.
+
+## Dynamic-state evidence for WCAG 4.1.2
+
+WCAG 4.1.2 is an inherited Level A criterion. Record its evidence for each
+interactive component and relevant state, including components whose states
+change after interaction.
+
+| Component / route / state | Name and role evidence | Initial value/state | Interaction and resulting value/state | Keyboard result | AT review |
+|---|---|---|---|---|---|
+| Example: `/settings`, theme toggle | Playwright role/name assertion | `aria-pressed=false`, light theme | Click: `aria-pressed=true`, dark theme | Space and Enter verified | Browser/AT, version, date, result |
+
+Do not mark a changing state as verified from a static scan or automated
+accessibility audit alone. Use `DYNAMIC TEST REQUIRED` until an interaction test
+checks both the exposed state and the corresponding application state. For
+custom widgets, live announcements, or state whose meaning depends on context,
+record a manual assistive-technology review as well. See
+[`dynamic-state-test-protocol.md`](dynamic-state-test-protocol.md).
