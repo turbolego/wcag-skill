@@ -58,6 +58,11 @@ npm ci
 # major version pinned in package.json.
 ```
 
+Until `extract-zip` releases a fix for its
+[symlink path traversal vulnerability](https://github.com/advisories/GHSA-jmr9-qjv8-65gv),
+`package.json` overrides Puppeteer's browser-management dependency to
+`@puppeteer/browsers` 3.2.6, removing `extract-zip` from the lockfile.
+
 The audit wrapper looks for CLIs installed locally (`./node_modules/.bin`) or
 globally. Prefix commands with `npx` or add `./node_modules/.bin` to `PATH`
 if you installed locally.
