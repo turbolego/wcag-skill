@@ -27,7 +27,7 @@ evidence, not proof of conformance.
 | `tests/` | Fixture and CI smoke test for documented bundled commands |
 
 `scripts/publish-web.py` is repository release tooling for maintainers only. It
-reads `CLAWHUB_TOKEN` and is excluded from the published skill bundle via
+reads `CLAWHUB_TOKEN`    and is excluded from the published skill bundle via
 `.clawhubignore`, so an installed copy of this skill never contains it.
 
 ## Install
