@@ -1,34 +1,32 @@
 name: Publish to ClawHub (Web Upload)
 
-# Active push-triggered publisher. Uses the multipart web-upload API path
-# directly instead of the reusable CLI-based workflow
-# (openclaw/clawhub/.github/workflows/skill-publish.yml), which currently
-# has two known upstream bugs that block it: a server-side clock-domain
-# bug on the ticket-upload path (openclaw/clawhub#3397, PR #3400), and an
-# unhandled "pending-publication" status when a prior publish for the same
-# version is still in security-scan review (run 33077893243). This
-# workflow's own script (scripts/publish-web.py) treats a pending scan as
-# a normal successful publish, so it isn't affected by either bug.
+# Active publisher that FORCES ClawHub's live version to match the repo.
 #
-# The version is auto-incremented on every real publish by
-# scripts/bump-skill-version.py, which bumps the patch component past
-# whatever is highest of the checked-in SKILL.md version and every version
-# ClawHub already has on record — so a run that silently published ahead of
-# the repo (as happened once via the reusable workflow's
-# "pending-publication" bug, run 35492158592) can't cause a version
-# collision on the next publish. The bump is committed straight back to the
-# branch with `[skip ci]` so it doesn't re-trigger this workflow.
-# ClawHub stages accepted uploads while automated security checks run. The
-# publish job waits for the exact bumped version to become publicly available
-# and fails if it remains pending or is rejected, rather than reporting a
-# successful workflow while ClawHub still serves an older release.
+# Old design (bug): auto-bumped the version off the *checked-in* SKILL.md and
+# *committed* the new number back to the branch, then passively polled ClawHub
+# for up to 30 minutes waiting for its security-scan queue to promote the
+# version. Because a prior run's publish can get stuck in "pending", the
+# checked-in version drifts ahead of everything ClawHub has actually recorded,
+# and every subsequent run bumps further ahead — so GitHub and ClawHub diverge
+# permanently (observed: GitHub SKILL.md 2.0.20 vs ClawHub live 2.0.14).
 #
-# publish-to-clawhub.yml is kept as a manual (workflow_dispatch-only)
-# option. Both workflows share the `clawhub-publish` concurrency group
-# below (with cancel-in-progress disabled) so a manual run and a push-
-# triggered run can never bump/publish concurrently — without that, both
-# could read the same highest registry version, choose the same next
-# patch, and race each other's push/publish.
+# New design: the repo's declared SKILL.md version is the source of truth and is
+# never auto-bumped off its own drifted value. Each run:
+#   1. resolves the target version (SKILL.md frontmatter) + ClawHub's live version;
+#   2. publishes the target (multipart web-upload) if ClawHub hasn't recorded it;
+#   3. FORCE-syncs ClawHub: re-runs the security scan with update:true so a
+#      pending version gets recorded, then points the `latest` tag at the target
+#      (scripts/clawhub-force-sync.py, using CLAWHUB_TOKEN);
+#   4. verifies ClawHub's live version now equals the target, failing loudly if
+#      not (e.g. if the security scan legitimately rejects the version).
+#
+# No version number is committed back to the repo, so it can't drift ahead of
+# ClawHub. To release a new version, bump SKILL.md/README/skill-card and push —
+# this workflow then forces ClawHub to catch up.
+#
+# publish-to-clawhub.yml remains a manual (workflow_dispatch-only) option. Both
+# share the `clawhub-publish` concurrency group (cancel-in-progress disabled)
+# so a manual run and a push-triggered run can never publish concurrently.
 
 on:
   push:
@@ -56,68 +54,63 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
 
-permissions:
-  contents: write
-
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
-      - name: Auto-increment skill version
-        id: bump
+      - name: Resolve target + ClawHub state
+        id: resolve
         run: |
-          version="$(python3 scripts/bump-skill-version.py --write)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "::notice:: Next skill version: $version"
+          TARGET="$(python3 scripts/read-version.py)"
+          python3 - "$TARGET" <<'PY'
+          import json, os, sys
+          from urllib.request import urlopen
+          target = sys.argv[1]
+          def get(url):
+              with urlopen(url, timeout=60) as r:
+                  return json.load(r)
+          live = get("https://clawhub.ai/api/v1/skills/wcag-skill").get("latestVersion", {}).get("version", "") or ""
+          recorded = {i.get("version") for i in get("https://clawhub.ai/api/v1/skills/wcag-skill/versions").get("items", [])}
+          rec = "1" if target in recorded else "0"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"target={target}\nlive={live}\nrecorded={rec}\n")
+          print(f"target(repo)={target}  clawhub-live={live}  target-already-recorded={target in recorded}")
+          PY
 
-      - name: Commit version bump
-        if: ${{ inputs.dry_run != true }}
+      - name: Dry run
+        if: ${{ inputs.dry_run == true }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add SKILL.md README.md skill-card.md
-          if git diff --cached --quiet; then
-            echo "No version change to commit"
-          else
-            git commit -m "ci: bump wcag-skill version to ${{ steps.bump.outputs.version }} [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          echo "::notice:: Dry run. Target=${{ steps.resolve.outputs.target }}, ClawHub live=${{ steps.resolve.outputs.live }}."
+          python3 scripts/publish-web.py --dry-run --expected-version "${{ steps.resolve.outputs.target }}"
 
-      - name: Publish to ClawHub
+      - name: Publish to ClawHub (only if not yet recorded)
+        if: ${{ inputs.dry_run != true && steps.resolve.outputs.target != steps.resolve.outputs.live && steps.resolve.outputs.recorded == '0' }}
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-          EXPECTED_VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            echo "::notice:: Dry run — publishing would normally trigger here."
-            python3 scripts/publish-web.py --dry-run --expected-version "$EXPECTED_VERSION"
-            exit 0
-          fi
-          python3 scripts/publish-web.py --expected-version "$EXPECTED_VERSION"
+          python3 scripts/publish-web.py --expected-version "${{ steps.resolve.outputs.target }}"
 
-      - name: Verify live version (post-publish)
-        if: ${{ success() && inputs.dry_run != true }}
+      - name: Force-sync ClawHub live version to target
+        if: ${{ inputs.dry_run != true && steps.resolve.outputs.target != steps.resolve.outputs.live }}
         env:
-          EXPECTED_VERSION: ${{ steps.bump.outputs.version }}
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          if [[ -z "$EXPECTED_VERSION" ]]; then
-            echo "::error::Version bump step did not provide an expected version"
+          python3 scripts/clawhub-force-sync.py \
+            --slug wcag-skill \
+            --version "${{ steps.resolve.outputs.target }}" \
+            --tag latest
+
+      - name: Verify in sync
+        if: ${{ inputs.dry_run != true && steps.resolve.outputs.target != steps.resolve.outputs.live }}
+        run: |
+          TARGET="${{ steps.resolve.outputs.target }}"
+          LIVE="$(curl -sf https://clawhub.ai/api/v1/skills/wcag-skill | python3 -c 'import json,sys; print(json.load(sys.stdin).get("latestVersion",{}).get("version",""))')"
+          if [ "$LIVE" = "$TARGET" ]; then
+            echo "✅ In sync: ClawHub live and GitHub are both at $TARGET."
+          else
+            echo "::error:: Still out of sync after force-sync: ClawHub live=$LIVE, target=$TARGET."
             exit 1
           fi
-          echo "Expected published version: $EXPECTED_VERSION"
-          for i in $(seq 1 120); do
-            LIVE=$(curl -sf https://clawhub.ai/api/v1/skills/wcag-skill \
-              | python3 -c 'import json,sys; latest=json.load(sys.stdin).get("latestVersion"); print(latest.get("version", "") if isinstance(latest, dict) else "")')
-            echo "Poll $i: live = $LIVE"
-            if [[ "$LIVE" == "$EXPECTED_VERSION" ]]; then
-              echo "✅ ClawHub is now serving version $EXPECTED_VERSION"
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "::error::ClawHub still serves $LIVE after 30 minutes; the upload may still be pending or may have failed automated security checks."
-          exit 1
