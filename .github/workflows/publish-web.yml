@@ -89,13 +89,14 @@ jobs:
       - name: Publish to ClawHub
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          EXPECTED_VERSION: ${{ steps.bump.outputs.version }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "::notice:: Dry run — publishing would normally trigger here."
-            python3 scripts/publish-web.py --dry-run
+            python3 scripts/publish-web.py --dry-run --expected-version "$EXPECTED_VERSION"
             exit 0
           fi
-          python3 scripts/publish-web.py
+          python3 scripts/publish-web.py --expected-version "$EXPECTED_VERSION"
 
       - name: Verify live version (post-publish)
         if: ${{ success() && inputs.dry_run != true }}

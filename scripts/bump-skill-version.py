@@ -43,11 +43,14 @@ Version = tuple[int, int, int]
 
 
 def read_local_version() -> str:
-    """Extract metadata.version from SKILL.md frontmatter."""
+    """Extract metadata.version from SKILL.md YAML frontmatter only."""
     content = SKILL_MD.read_text()
-    match = re.search(r"^\s*version:\s*['\"]?([^'\"\s]+)", content, re.MULTILINE)
+    fm = re.match(r"(?s)^\s*---\n(.*?)\n---\n", content)
+    if not fm:
+        raise SystemExit("Could not find YAML frontmatter in SKILL.md")
+    match = re.search(r"(?m)^\s*version:\s*['\"]?([^'\"\s]+)", fm.group(1))
     if not match:
-        raise SystemExit("Could not find metadata.version in SKILL.md")
+        raise SystemExit("Could not find metadata.version in SKILL.md frontmatter")
     return match.group(1)
 
 

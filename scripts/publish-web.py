@@ -78,14 +78,25 @@ def collect_files(root: Path) -> list[tuple[str, bytes]]:
     return files
 
 
-def read_version(skill_dir: Path) -> str:
-    """Extract version from SKILL.md frontmatter."""
+def read_version_from_frontmatter(skill_dir: Path) -> str:
+    """Extract metadata.version from SKILL.md YAML frontmatter only.
+
+    The loose line-based reader matched any line beginning with
+    `version:` anywhere in the file. A stray occurrence in the body or
+    inside a code fence could shadow the real value, publishing a
+    version that isn't what SKILL.md declares. We restrict the search
+    to the leading `---` frontmatter block and fail fast when it (or
+    the version key) is missing.
+    """
     content = (skill_dir / "SKILL.md").read_text()
-    for line in content.split("\n"):
-        match = re.match(r"^\s*version:\s*['\"]?([^'\"\s]+)", line)
-        if match:
-            return match.group(1)
-    return "unknown"
+    fm = re.match(r"(?s)^\s*---\n(.*?)\n---\n", content)
+    if not fm:
+        raise SystemExit("Could not find YAML frontmatter in SKILL.md")
+    frontmatter = fm.group(1)
+    match = re.search(r"(?m)^\s*version:\s*['\"]?([^'\"\s]+)", frontmatter)
+    if not match:
+        raise SystemExit("Could not find metadata.version in SKILL.md frontmatter")
+    return match.group(1)
 
 
 def build_multipart(
@@ -137,6 +148,10 @@ def build_upload_request(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publish wcag-skill to ClawHub")
     parser.add_argument("--dry-run", action="store_true", help="Print payload, skip upload")
+    parser.add_argument(
+        "--expected-version",
+        help="Version that CI expects to publish; fail if SKILL.md disagrees",
+    )
     args = parser.parse_args()
 
     token = None
@@ -144,7 +159,11 @@ def main() -> None:
         token = get_token()
         print(f"✓ Token present ({len(token)} chars)")
 
-    version = read_version(SKILL_DIR)
+    version = read_version_from_frontmatter(SKILL_DIR)
+    if args.expected_version and version != args.expected_version:
+        raise SystemExit(
+            f"Version mismatch: SKILL.md has {version}, expected {args.expected_version}"
+        )
     print(f"✓ Version: {version}")
 
     files = collect_files(SKILL_DIR)
@@ -195,6 +214,17 @@ def main() -> None:
         result = json.loads(resp.read())
         print(json.dumps(result, indent=2))
         if result.get("ok"):
+            # Round-trip guard: if the API reports a version, it must match exactly.
+            # A pending-publication conflict would otherwise persist a different
+            # version on ClawHub, causing the CI verify step to see a mismatch.
+            returned_version = str(result.get("version") or "").strip()
+            if returned_version and returned_version != version:
+                print(
+                    f"\n❌ API version mismatch: expected {version}, "
+                    f"API returned {returned_version}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             publication_status = result.get("publicationStatus", result.get("status"))
             if publication_status == "pending":
                 print(
