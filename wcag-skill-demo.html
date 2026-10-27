@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>WCAG Skill Demo</title>
+=======
+    <title>WCAG Skill vs Free Inference API Demo</title>
+>>>>>>> 0a650c2 (Add working demo for side-by-side comparison of API outputs)
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; }
@@ -35,8 +39,17 @@
         });
 
         $('#fetch-skill').on('click', function() {
+<<<<<<< HEAD
             // Example skill call (replace with actual method to invoke skill)
             $.get('/path_to_wcag_skill_endpoint', function(skillData) {
+=======
+            <script>
+        $('#fetch-skill').on('click', function() {
+            $.get('/path_to_wcag_skill_endpoint', function(skillData) {
+                $('#skill-output').html(`<pre>${JSON.stringify(skillData, null, 2)}</pre>`);
+            });
+        });
+>>>>>>> 0a650c2 (Add working demo for side-by-side comparison of API outputs)
                 $('#skill-output').text(JSON.stringify(skillData));
             });
         });
