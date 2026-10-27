@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCAG Skill Demo</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { display: flex; justify-content: space-between; }
+        .api-result, .skill-result { border: 1px solid #ccc; padding: 10px; width: 45%; }
+    </style>
+</head>
+<body>
+    <h1>WCAG Skill vs API Demo</h1>
+    <div class="container">
+        <div class="api-result">
+            <h2>Free Inference API Result</h2>
+            <button id="fetch-api">Fetch API Result</button>
+            <div id="api-output"></div>
+        </div>
+        <div class="skill-result">
+            <h2>WCAG Skill Result</h2>
+            <button id="fetch-skill">Fetch Skill Result</button>
+            <div id="skill-output"></div>
+        </div>
+    </div>
+
+    <script>
+        $('#fetch-api').on('click', function() {
+            // Example API call (replace URL with actual inference endpoint)
+            $.get('https://api.example.com/inference', function(data) {
+                $('#api-output').text(JSON.stringify(data));
+            });
+        });
+
+        $('#fetch-skill').on('click', function() {
+            // Example skill call (replace with actual method to invoke skill)
+            $.get('/path_to_wcag_skill_endpoint', function(skillData) {
+                $('#skill-output').text(JSON.stringify(skillData));
+            });
+        });
+    </script>
+</body>
+</html>
