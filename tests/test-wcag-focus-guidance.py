@@ -85,6 +85,7 @@ class WcagFocusGuidanceTests(unittest.TestCase):
         self.assert_guidance(
             AAA_MATRIX,
             r"\|\s*2\.4\.13\s*\|\s*Focus Appearance \(AAA\)\s*\|"
+            r".{0,100}When a focus indicator is visible"
             r".{0,250}two-CSS-pixel-thick perimeter of the unfocused component or sub-component"
             r".{0,200}same pixels.{0,100}3:1 contrast",
         )
@@ -94,7 +95,7 @@ class WcagFocusGuidanceTests(unittest.TestCase):
         )
         self.assert_guidance(
             AAA_MATRIX,
-            r"the indicator and its background color are not modified by the author",
+            r"neither the indicator nor its background color is modified by the author",
         )
 
     def test_aaa_matrix_separates_inherited_aa_focus_criteria(self):
@@ -116,7 +117,7 @@ class WcagFocusGuidanceTests(unittest.TestCase):
             AAA_MATRIX,
             r"\|\s*2\.4\.7\s*\|\s*Focus Visible \(AA\)\s*\|"
             r".{0,180}at least one mode of operation in which its keyboard focus indicator is visible"
-            r".{0,100}Keep the indicator visible while focus is shown",
+            r".{0,100}the indicator must remain visible while focus is shown",
         )
         self.assert_guidance(
             AAA_MATRIX,
