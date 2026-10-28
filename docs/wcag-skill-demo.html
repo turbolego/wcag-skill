@@ -239,7 +239,7 @@
 
       <section class="results" aria-labelledby="results-heading">
         <h2 id="results-heading">Generated webpages</h2>
-        <p class="results-intro">Previews run in isolated frames with scripts disabled. A model may take several minutes if its free queue is busy.</p>
+        <p class="results-intro">Previews run in isolated frames. A model may take several minutes if its free queue is busy.</p>
         <div class="result-grid">
           <article class="result-card" aria-labelledby="side-a-heading">
             <div class="result-heading">
@@ -247,7 +247,7 @@
               <p class="status" id="status-a" role="status" aria-live="polite">Ready when you are.</p>
             </div>
             <p class="preview-label">Page preview</p>
-            <iframe class="preview" id="preview-a" title="Preview of the webpage generated with the WCAG skill" sandbox="" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
+            <iframe class="preview" id="preview-a" title="Preview of the webpage generated with the WCAG skill" sandbox="allow-scripts" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
             <p class="code-label">Generated HTML</p>
             <pre class="code-output" id="code-a">No result yet.</pre>
             <section class="axe-results" aria-labelledby="axe-heading-a">
@@ -265,7 +265,7 @@
               <p class="status" id="status-b" role="status" aria-live="polite">Ready when you are.</p>
             </div>
             <p class="preview-label">Page preview</p>
-            <iframe class="preview" id="preview-b" title="Preview of the webpage generated without the WCAG skill" sandbox="" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
+            <iframe class="preview" id="preview-b" title="Preview of the webpage generated without the WCAG skill" sandbox="allow-scripts" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
             <p class="code-label">Generated HTML</p>
             <pre class="code-output" id="code-b">No result yet.</pre>
             <section class="axe-results" aria-labelledby="axe-heading-b">
@@ -563,7 +563,7 @@
 
         function restorePreview(side) {
           const frame = axeFrames[side];
-          frame.setAttribute("sandbox", "");
+          frame.setAttribute("sandbox", "allow-scripts");
           frame.srcdoc = document.querySelector(`#code-${side}`).textContent;
         }
 
