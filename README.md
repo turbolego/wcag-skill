@@ -66,6 +66,12 @@ Until `extract-zip` releases a fix for its
 `package.json` overrides Puppeteer's browser-management dependency to
 `@puppeteer/browsers` 3.2.6, removing `extract-zip` from the lockfile.
 
+The transitive `deepmerge` dependency is overridden to 4.1.2 to avoid
+[GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4),
+which affects versions 4.2.0 through 4.3.1. This is a downgrade mitigation,
+not an upstream patched release. Renovate excludes the affected range;
+review compatibility and the advisory before upgrading the override.
+
 The audit wrapper looks for CLIs installed locally (`./node_modules/.bin`) or
 globally. Prefix commands with `npx` or add `./node_modules/.bin` to `PATH`
 if you installed locally.

@@ -14,7 +14,7 @@
     "vnu-jar": "26.10.12"
   },
   "overrides": {
-    "deepmerge": "4.3.1",
+    "deepmerge": "4.1.2",
     "follow-redirects": "1.16.2",
     "puppeteer": {
       "@puppeteer/browsers": "3.2.6"
