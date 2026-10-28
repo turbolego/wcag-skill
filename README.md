@@ -23,6 +23,7 @@ evidence, not proof of conformance.
 | `references/dynamic-state-test-protocol.md` | WCAG 4.1.2 inventory, interaction evidence, and assistive-technology review |
 | `templates/playwright-state.spec.ts` | Playwright example for testing programmatic and application state together |
 | `docs/index.html` | GitHub Pages site with interactive before-and-after WCAG 2.2 demos |
+| `docs/wcag-skill-demo.html` | Side-by-side AI-generated page comparison with and without the WCAG skill, including axe-core tests |
 | `benchmark/` | Optional AI-WCAG-Gauntlet extension; not a production conformance gate |
 | `tests/` | Fixture and CI smoke test for documented bundled commands |
 
@@ -81,8 +82,9 @@ in a browser to try the dark-theme toggle with missing state and the corrected
 
 ## GitHub Pages demos
 
-The interactive demo site lives in [`docs/index.html`](docs/index.html). To
-preview it locally, run:
+The interactive demo site lives in [`docs/index.html`](docs/index.html), with
+the [AI side-by-side comparison](docs/wcag-skill-demo.html) alongside it. To
+preview both locally, run:
 
 ```bash
 python3 -m http.server 8000 --directory docs
@@ -90,9 +92,11 @@ python3 -m http.server 8000 --directory docs
 
 Then open `http://localhost:8000`. To publish it from GitHub Pages, select
 **Settings → Pages → Deploy from a branch**, choose the `main` branch and
-`/docs` as the folder. The site includes intentionally flawed examples; they
-are labelled and paired with improved implementations. The docs folder is
-excluded from the installable skill package.
+`/docs` as the folder. That publishes both pages and any other site assets in
+`docs/`; no separate Pages workflow is required. The site includes
+intentionally flawed examples; they are labelled and paired with improved
+implementations. The docs folder is excluded from the installable skill
+package.
 
 ## Audit a page
 

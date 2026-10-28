@@ -42,6 +42,11 @@ python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get
 node scripts/run-w3c-validator.mjs docs/index.html "$tmp_dir/w3c_pages_report.json" https://turbolego.github.io/wcag-skill/
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("messages")==[] else 1)' "$tmp_dir/w3c_pages_report.json"
 
+test -s docs/wcag-skill-demo.html
+grep -Fq 'href="./wcag-skill-demo.html"' docs/index.html
+node scripts/run-w3c-validator.mjs docs/wcag-skill-demo.html "$tmp_dir/w3c_ai_demo_report.json" https://turbolego.github.io/wcag-skill/wcag-skill-demo.html
+python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get("messages")==[] else 1)' "$tmp_dir/w3c_ai_demo_report.json"
+
 # vnu (like Pa11y) exits non-zero when it finds markup errors, not just on a
 # technical fault. run-w3c-validator.mjs must always exit 0 once it has
 # successfully written a report, even when that report contains errors,

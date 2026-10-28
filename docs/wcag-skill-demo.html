@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Compare two webpages generated from the same prompt and free AI model, with and without the WCAG skill.">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>WCAG Skill | Side-by-side demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #18243a;
+        background: #f5f7fb;
+        line-height: 1.55;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      button, select, textarea { font: inherit; }
+      button, select { min-height: 44px; }
+      button { padding: 0.55rem 1rem; cursor: pointer; }
+      button:disabled, select:disabled { cursor: not-allowed; opacity: 0.65; }
+      :focus-visible { outline: 3px solid #005fcc; outline-offset: 3px; }
+      [hidden] { display: none !important; }
+
+      .skip-link {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        z-index: 2;
+        transform: translateY(-180%);
+        padding: 0.65rem 1rem;
+        color: #18243a;
+        background: #fff;
+        border: 2px solid #18243a;
+      }
+      .skip-link:focus { transform: translateY(0); }
+      .site-header { color: #fff; background: #102448; }
+      .header-inner, main, .footer-inner {
+        width: min(100% - 2rem, 1200px);
+        margin-inline: auto;
+      }
+      .header-inner {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .brand { color: #fff; font-weight: 750; text-decoration: none; }
+      .header-link { color: #fff; }
+      main { padding-block: 2.5rem 3rem; }
+      .intro { max-width: 780px; margin-bottom: 1.75rem; }
+      .eyebrow {
+        margin: 0 0 0.5rem;
+        color: #344c72;
+        font-size: 0.82rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; }
+      h2, h3 { line-height: 1.25; }
+      .intro p { max-width: 72ch; }
+      .notice {
+        padding: 0.9rem 1rem;
+        background: #fff8e5;
+        border-left: 5px solid #9b5c00;
+        border-radius: 0.35rem;
+      }
+      .controls, .result-card {
+        background: #fff;
+        border: 1px solid #c7d0df;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.2rem 0.8rem #1427470a;
+      }
+      .controls { padding: clamp(1rem, 3vw, 1.5rem); }
+      .controls h2 { margin: 0 0 1rem; font-size: 1.3rem; }
+      .form-grid {
+        display: grid;
+        grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 2fr);
+        gap: 1rem;
+      }
+      label { display: block; margin-bottom: 0.35rem; font-weight: 700; }
+      select, textarea {
+        width: 100%;
+        border: 1px solid #69788f;
+        border-radius: 0.35rem;
+        color: #18243a;
+        background: #fff;
+      }
+      select { padding: 0.45rem 0.6rem; }
+      textarea { min-height: 8rem; padding: 0.65rem; resize: vertical; }
+      input[type="range"] { display: block; width: 100%; min-height: 44px; margin: 0.2rem 0 0; accent-color: #174ea6; }
+      #max-tokens-value { display: block; margin-top: 0.15rem; font-weight: 700; }
+      .help { margin: 0.35rem 0 0; color: #43516a; font-size: 0.9rem; }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+      .primary-button {
+        color: #fff;
+        background: #174ea6;
+        border: 2px solid #174ea6;
+        border-radius: 0.35rem;
+        font-weight: 700;
+      }
+      .primary-button:hover:not(:disabled) { background: #103b82; }
+      .secondary-button {
+        color: #18243a;
+        background: #fff;
+        border: 2px solid #69788f;
+        border-radius: 0.35rem;
+      }
+      .run-status { min-height: 1.5em; margin: 0; }
+      .results { margin-top: 2rem; }
+      .results > h2 { margin-bottom: 0.35rem; }
+      .results-intro { margin-top: 0; color: #43516a; }
+      .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+      .result-card { min-width: 0; overflow: hidden; }
+      .result-heading { padding: 1rem 1rem 0.75rem; }
+      .result-heading h3 { margin: 0; font-size: 1.2rem; }
+      .result-heading p { margin: 0.35rem 0 0; color: #43516a; }
+      .status { min-height: 1.5em; margin: 0; font-size: 0.92rem; }
+      .error { color: #8b1d1d !important; }
+      .preview-label, .code-label {
+        display: block;
+        margin: 0;
+        padding: 0.45rem 1rem;
+        color: #18243a;
+        background: #e9eef8;
+        font-size: 0.9rem;
+        font-weight: 750;
+      }
+      .preview {
+        display: block;
+        width: 100%;
+        height: 360px;
+        border: 0;
+        border-block: 1px solid #c7d0df;
+        background: #fff;
+      }
+      .code-output {
+        max-height: 18rem;
+        margin: 0;
+        padding: 0.85rem 1rem;
+        overflow: auto;
+        color: #f5f7fb;
+        background: #18243a;
+        font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .axe-results { padding: 0.75rem 1rem 1rem; border-top: 1px solid #c7d0df; }
+      .axe-results h4 { margin: 0 0 0.4rem; }
+      .axe-results p { margin: 0.35rem 0; }
+      .axe-report {
+        max-height: 20rem;
+        margin: 0.5rem 0 0;
+        padding: 0.75rem;
+        overflow: auto;
+        color: #f5f7fb;
+        background: #18243a;
+        font: 0.82rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .axe-controls {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #fff;
+        border: 1px solid #c7d0df;
+        border-radius: 0.75rem;
+      }
+      .axe-version-control { max-width: 24rem; margin-bottom: 0.9rem; }
+      .axe-controls p { margin: 0.6rem 0 0; }
+      footer { padding-block: 1rem 2rem; color: #43516a; font-size: 0.9rem; }
+      footer p { margin: 0.4rem 0; }
+
+      @media (max-width: 760px) {
+        .form-grid, .result-grid { grid-template-columns: 1fr; }
+        .header-inner { align-items: flex-start; flex-direction: column; justify-content: center; padding-block: 0.75rem; }
+        .preview { height: 320px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="https://github.com/turbolego/wcag-skill">WCAG Skill</a>
+        <a class="header-link" href="https://github.com/turbolego/wcag-skill/blob/main/SKILL.md">View the skill on GitHub</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">A controlled comparison</p>
+        <h1 id="page-title">Does an accessibility skill change the result?</h1>
+        <p>Send the same prompt to the same free AI model twice. Side A gets the current wcag-skill instructions; Side B gets no WCAG skill. Compare each generated page in its preview and inspect the HTML.</p>
+        <p class="notice"><strong>Before you start:</strong> Your prompt is sent to AI Horde, a public volunteer-run inference service. Do not include passwords, personal information, or confidential content. This demo shows generated examples; it does not certify WCAG conformance.</p>
+      </section>
+
+      <section class="controls" aria-labelledby="setup-heading">
+        <h2 id="setup-heading">Set up the comparison</h2>
+        <form id="comparison-form">
+          <div class="form-grid">
+            <div>
+              <label for="model-select">AI Horde text model</label>
+              <select id="model-select" name="model" disabled>
+                <option value="">Loading available models…</option>
+              </select>
+              <p id="model-help" class="help">Free models and queue estimates are loaded from AI Horde. No API key is required.</p>
+              <label for="max-tokens">Requested maximum output tokens per page</label>
+              <input id="max-tokens" name="max-tokens" type="range" min="512" max="4096" step="512" value="512" aria-describedby="max-tokens-help max-tokens-value">
+              <output id="max-tokens-value" for="max-tokens" aria-live="polite">512 tokens</output>
+              <p id="max-tokens-help" class="help">This sets the requested output cap, not a model capability. AI Horde does not publish per-model output limits in its public model status. Anonymous requests above 512 tokens may require kudos or be rejected during high demand. 4096 is this demo’s slider ceiling, not a guaranteed model limit.</p>
+            </div>
+            <div>
+              <label for="prompt">Prompt to use for both sides</label>
+              <textarea id="prompt" name="prompt" required>Create a simple, responsive one-page event signup page for a neighborhood garden workshop. Include a short introduction, event details, name and email fields, and a clear registration button. Return a complete standalone HTML document; do not use external libraries or assets.</textarea>
+              <p class="help">The prompt, selected model, output-token cap, and other generation settings are identical for both sides. Only Side A receives the WCAG skill.</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="run-button" class="primary-button" type="submit" disabled>Run both sides</button>
+            <button id="cancel-button" class="secondary-button" type="button" hidden>Stop waiting</button>
+            <p id="run-status" class="run-status" role="status" aria-live="polite">Loading AI Horde text models…</p>
+          </div>
+        </form>
+      </section>
+
+      <section class="results" aria-labelledby="results-heading">
+        <h2 id="results-heading">Generated webpages</h2>
+        <p class="results-intro">Previews run in isolated frames with scripts disabled. A model may take several minutes if its free queue is busy.</p>
+        <div class="result-grid">
+          <article class="result-card" aria-labelledby="side-a-heading">
+            <div class="result-heading">
+              <h3 id="side-a-heading">Side A · With WCAG skill</h3>
+              <p class="status" id="status-a" role="status" aria-live="polite">Ready when you are.</p>
+            </div>
+            <p class="preview-label">Page preview</p>
+            <iframe class="preview" id="preview-a" title="Preview of the webpage generated with the WCAG skill" sandbox="" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
+            <p class="code-label">Generated HTML</p>
+            <pre class="code-output" id="code-a">No result yet.</pre>
+            <section class="axe-results" aria-labelledby="axe-heading-a">
+              <h4 id="axe-heading-a">axe-core results</h4>
+              <p id="axe-status-a" role="status" aria-live="polite">No test run yet.</p>
+              <details id="axe-details-a" hidden>
+                <summary>View the full Side A report</summary>
+                <pre class="axe-report" id="axe-report-a"></pre>
+              </details>
+            </section>
+          </article>
+          <article class="result-card" aria-labelledby="side-b-heading">
+            <div class="result-heading">
+              <h3 id="side-b-heading">Side B · Without WCAG skill</h3>
+              <p class="status" id="status-b" role="status" aria-live="polite">Ready when you are.</p>
+            </div>
+            <p class="preview-label">Page preview</p>
+            <iframe class="preview" id="preview-b" title="Preview of the webpage generated without the WCAG skill" sandbox="" referrerpolicy="no-referrer" srcdoc="<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Run the comparison to see the generated page.</body></html>"></iframe>
+            <p class="code-label">Generated HTML</p>
+            <pre class="code-output" id="code-b">No result yet.</pre>
+            <section class="axe-results" aria-labelledby="axe-heading-b">
+              <h4 id="axe-heading-b">axe-core results</h4>
+              <p id="axe-status-b" role="status" aria-live="polite">No test run yet.</p>
+              <details id="axe-details-b" hidden>
+                <summary>View the full Side B report</summary>
+                <pre class="axe-report" id="axe-report-b"></pre>
+              </details>
+            </section>
+          </article>
+        </div>
+        <div class="axe-controls">
+          <div class="axe-version-control">
+            <label for="axe-version-select">axe-core version</label>
+            <select id="axe-version-select" disabled>
+              <option value="">Loading shared versions…</option>
+            </select>
+            <p id="axe-version-help" class="help" role="status" aria-live="polite">Checking the latest shared stable version.</p>
+            <button id="axe-version-retry" class="secondary-button" type="button" hidden>Retry version check</button>
+          </div>
+          <button id="axe-button" class="primary-button" type="button" disabled>Run axe-core tests on both pages</button>
+          <p id="axe-run-status" class="run-status" role="status" aria-live="polite">Generate both pages before running the accessibility tests.</p>
+          <p class="help">The latest stable release available on all three CDNs is selected by default. Each selected version is checked on all three CDNs before testing. The test runs that release’s rules tagged WCAG 2.0 A/AA/AAA, WCAG 2.1 A/AA, WCAG 2.2 AA, and best practice; older releases may not include newer tags. axe-core does not provide a WCAG 2.2 AAA tag, and automated results are not a conformance claim. Method: <a href="https://uustreak.no/axe-test.html">UUStreak axe test</a>.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <p>Inference by <a href="https://aihorde.net/">AI Horde</a>. The free public service may have variable wait times or availability.</p>
+        <p>Provider examples: <a href="https://github.com/turbolego/BotGauntlet/blob/main/docs/PROVIDERS.md">BotGauntlet free inference providers</a>. Skill source: <a href="https://github.com/turbolego/wcag-skill/blob/main/SKILL.md">wcag-skill/SKILL.md</a>.</p>
+      </div>
+    </footer>
+
+    <script>
+      (() => {
+        const api = "https://aihorde.net/api/v2";
+        const skillUrl = "https://raw.githubusercontent.com/turbolego/wcag-skill/main/SKILL.md";
+        const axeTags = ["wcag2a", "wcag2aa", "wcag2aaa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
+        const headers = {
+          "Content-Type": "application/json",
+          "apikey": "0000000000",
+          "Client-Agent": "wcag-skill-demo/1.0"
+        };
+        const form = document.querySelector("#comparison-form");
+        const modelSelect = document.querySelector("#model-select");
+        const promptInput = document.querySelector("#prompt");
+        const maxTokensInput = document.querySelector("#max-tokens");
+        const maxTokensOutput = document.querySelector("#max-tokens-value");
+        const runButton = document.querySelector("#run-button");
+        const cancelButton = document.querySelector("#cancel-button");
+        const runStatus = document.querySelector("#run-status");
+        const axeButton = document.querySelector("#axe-button");
+        const axeVersionSelect = document.querySelector("#axe-version-select");
+        const axeVersionHelp = document.querySelector("#axe-version-help");
+        const axeVersionRetry = document.querySelector("#axe-version-retry");
+        const axeRunStatus = document.querySelector("#axe-run-status");
+        const generatedPages = { a: false, b: false };
+        const axeFrames = {
+          a: document.querySelector("#preview-a"),
+          b: document.querySelector("#preview-b")
+        };
+        const pendingAxeTests = new Set();
+        const axeTimeouts = new Map();
+        let activeController = null;
+        let activeAxeTestId = null;
+        let axeTestsRunning = false;
+        let failedAxeTests = 0;
+        let axeVersionsReady = false;
+        let axeVersionsLoading = false;
+
+        function setPanelStatus(side, message, isError = false) {
+          const status = document.querySelector(`#status-${side}`);
+          status.textContent = message;
+          status.classList.toggle("error", isError);
+        }
+
+        function setRunStatus(message, isError = false) {
+          runStatus.textContent = message;
+          runStatus.classList.toggle("error", isError);
+        }
+
+        function setAxeStatus(side, message, isError = false) {
+          const status = document.querySelector(`#axe-status-${side}`);
+          status.textContent = message;
+          status.classList.toggle("error", isError);
+        }
+
+        function getAxeCdnSources(version) {
+          return [
+            `https://cdnjs.cloudflare.com/ajax/libs/axe-core/${version}/axe.min.js`,
+            `https://cdn.jsdelivr.net/npm/axe-core@${version}/axe.min.js`,
+            `https://unpkg.com/axe-core@${version}/axe.min.js`
+          ];
+        }
+
+        async function getCommonAxeVersions() {
+          const registryUrls = [
+            "https://api.cdnjs.com/libraries/axe-core?fields=versions",
+            "https://data.jsdelivr.com/v1/package/npm/axe-core"
+          ];
+          const versionLists = await Promise.all(registryUrls.map(async (url) => {
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`Could not check axe-core versions (HTTP ${response.status}).`);
+            }
+            const data = await response.json();
+            if (!Array.isArray(data.versions)) {
+              throw new Error("An axe-core CDN returned an invalid version list.");
+            }
+            return data.versions;
+          }));
+          const jsDelivrVersions = new Set(versionLists[1]);
+          const candidates = [...new Set(versionLists[0])]
+            .filter((version) => /^\d+\.\d+\.\d+$/.test(version) && jsDelivrVersions.has(version))
+            .sort((left, right) => {
+              const a = left.split(".").map(Number);
+              const b = right.split(".").map(Number);
+              return b[0] - a[0] || b[1] - a[1] || b[2] - a[2];
+            });
+          return candidates;
+        }
+
+        async function isAxeVersionAvailable(version) {
+          const sources = getAxeCdnSources(version);
+          const available = await Promise.all(sources.map(async (url) => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            try {
+              const response = await fetch(url, {
+                method: "HEAD",
+                cache: "no-store",
+                signal: controller.signal
+              });
+              return response.ok;
+            } catch {
+              return false;
+            } finally {
+              clearTimeout(timeout);
+            }
+          }));
+          return available.every(Boolean);
+        }
+
+        async function findLatestCommonAxeVersion(candidates) {
+          for (const version of candidates) {
+            if (await isAxeVersionAvailable(version)) {
+              return version;
+            }
+          }
+          throw new Error("No axe-core version could be verified on all three CDNs.");
+        }
+
+        async function loadAxeVersions() {
+          if (axeVersionsLoading) return;
+          axeVersionsLoading = true;
+          axeVersionSelect.disabled = true;
+          axeVersionRetry.hidden = true;
+          axeVersionRetry.disabled = true;
+          axeVersionHelp.classList.remove("error");
+          axeVersionHelp.textContent = "Checking stable versions across all three CDNs…";
+
+          try {
+            const candidates = await getCommonAxeVersions();
+            if (candidates.length === 0) {
+              throw new Error("The CDNs have no stable axe-core versions in common.");
+            }
+            const latestVersion = await findLatestCommonAxeVersion(candidates);
+            axeVersionSelect.replaceChildren();
+            for (const version of candidates) {
+              const option = new Option(
+                version === latestVersion ? `${version} (latest shared)` : version,
+                version
+              );
+              axeVersionSelect.add(option);
+            }
+            axeVersionSelect.value = latestVersion;
+            axeVersionSelect.disabled = false;
+            axeVersionsReady = true;
+            axeVersionHelp.textContent = `Latest shared stable release: ${latestVersion}. Other versions are verified across all three CDNs before use.`;
+            axeButton.disabled = !(generatedPages.a && generatedPages.b && axeVersionsReady);
+          } catch (error) {
+            axeVersionSelect.replaceChildren(new Option("Versions unavailable", ""));
+            axeVersionSelect.disabled = true;
+            axeVersionsReady = false;
+            axeVersionHelp.textContent = `${error.message} Retry or reload the page to try again.`;
+            axeVersionHelp.classList.add("error");
+            axeVersionRetry.hidden = false;
+            axeButton.disabled = true;
+          } finally {
+            axeVersionsLoading = false;
+            axeVersionRetry.disabled = false;
+          }
+        }
+
+        function buildAxeTestPage(html, side, testId, axeCdnSources) {
+          const page = new DOMParser().parseFromString(html, "text/html");
+          page.querySelectorAll("base, script, iframe, object, embed, applet, meta[http-equiv='Content-Security-Policy']")
+            .forEach((element) => element.remove());
+          page.querySelectorAll("*").forEach((element) => {
+            for (const attribute of [...element.attributes]) {
+              const name = attribute.name.toLowerCase();
+              if (name.startsWith("on") || (/^(href|src|action|formaction|xlink:href)$/.test(name) && /^\s*javascript:/i.test(attribute.value))) {
+                element.removeAttribute(attribute.name);
+              }
+            }
+          });
+
+          const runner = page.createElement("script");
+          runner.textContent = `(() => {
+            const testId = ${JSON.stringify(testId)};
+            const side = ${JSON.stringify(side)};
+            const sources = ${JSON.stringify(axeCdnSources)};
+            const tags = ${JSON.stringify(axeTags)};
+            let sourceIndex = 0;
+            let axeLoaded = false;
+            let pageLoaded = document.readyState === "complete";
+            let started = false;
+            const reportError = message => parent.postMessage({ type: "axe-test-error", testId, side, message }, "*");
+            const runWhenReady = async () => {
+              if (!axeLoaded || !pageLoaded || started) return;
+              started = true;
+              try {
+                const results = await axe.run(document, {
+                  runOnly: { type: "tag", values: tags },
+                  resultTypes: ["violations", "passes", "incomplete", "inapplicable"]
+                });
+                parent.postMessage({ type: "axe-test-result", testId, side, results }, "*");
+              } catch (error) {
+                reportError(error.message);
+              }
+            };
+            const loadNextSource = () => {
+              if (sourceIndex >= sources.length) {
+                reportError("Could not load axe-core from any configured CDN.");
+                return;
+              }
+              const script = document.createElement("script");
+              script.src = sources[sourceIndex++];
+              script.onload = () => {
+                axeLoaded = true;
+                runWhenReady();
+              };
+              script.onerror = loadNextSource;
+              document.head.appendChild(script);
+            };
+            window.addEventListener("load", () => {
+              pageLoaded = true;
+              runWhenReady();
+            }, { once: true });
+            loadNextSource();
+          })();`;
+          page.body.append(runner);
+          return `<!doctype html>\n${page.documentElement.outerHTML}`;
+        }
+
+        function formatAxeResults(results, side) {
+          const lines = [
+            `AXE-CORE REPORT — Side ${side.toUpperCase()}`,
+            `axe-core: ${results.testEngine.version}`,
+            `Tested: ${new Date().toLocaleString()}`,
+            `Requested rule tags: ${axeTags.join(", ")}`,
+            "",
+            `Violations: ${results.violations.length}`,
+            `Passed rules: ${results.passes.length}`,
+            `Needs review: ${results.incomplete.length}`,
+            `Not applicable: ${results.inapplicable.length}`,
+            ""
+          ];
+
+          for (const violation of results.violations) {
+            lines.push(
+              `--- ${violation.id} (${violation.impact || "unknown impact"}) ---`,
+              violation.help,
+              violation.helpUrl
+            );
+            for (const node of violation.nodes) {
+              lines.push(
+                `Element: ${node.target.join(", ")}`,
+                `Summary: ${node.failureSummary || "No additional details."}`,
+                `HTML: ${node.html || ""}`,
+                ""
+              );
+            }
+          }
+          if (results.incomplete.length) {
+            lines.push("--- NEEDS MANUAL REVIEW ---");
+            for (const item of results.incomplete) {
+              lines.push(`${item.id}: ${item.help} (${item.nodes.length} element(s))`);
+            }
+          }
+          return lines.join("\n");
+        }
+
+        function restorePreview(side) {
+          const frame = axeFrames[side];
+          frame.setAttribute("sandbox", "");
+          frame.srcdoc = document.querySelector(`#code-${side}`).textContent;
+        }
+
+        function finishAxeTest(side, results, error) {
+          if (!pendingAxeTests.has(side)) return;
+          clearTimeout(axeTimeouts.get(side));
+          axeTimeouts.delete(side);
+          restorePreview(side);
+          pendingAxeTests.delete(side);
+
+          if (error) {
+            failedAxeTests += 1;
+            setAxeStatus(side, `axe-core test failed: ${error}`, true);
+            document.querySelector(`#axe-report-${side}`).textContent = error;
+            document.querySelector(`#axe-details-${side}`).hidden = false;
+          } else {
+            const violations = results.violations.length;
+            const review = results.incomplete.length;
+            setAxeStatus(side, `Complete: ${violations} violation${violations === 1 ? "" : "s"}; ${results.passes.length} passing rule${results.passes.length === 1 ? "" : "s"}; ${review} need${review === 1 ? "s" : ""} review. Automated results only.`);
+            document.querySelector(`#axe-report-${side}`).textContent = formatAxeResults(results, side);
+            document.querySelector(`#axe-details-${side}`).hidden = false;
+          }
+
+          if (pendingAxeTests.size === 0) {
+            activeAxeTestId = null;
+            axeTestsRunning = false;
+            runButton.disabled = false;
+            modelSelect.disabled = false;
+            axeVersionSelect.disabled = false;
+            axeButton.disabled = !(generatedPages.a && generatedPages.b && axeVersionsReady);
+            axeRunStatus.textContent = failedAxeTests
+              ? `${failedAxeTests} axe-core test${failedAxeTests === 1 ? "" : "s"} failed. See the affected side for details.`
+              : "Both axe-core tests are complete. Review findings and manually test; this is not a conformance result.";
+            axeRunStatus.classList.toggle("error", failedAxeTests > 0);
+          }
+        }
+
+        window.addEventListener("message", (event) => {
+          const message = event.data;
+          if (!message || !["a", "b"].includes(message.side)) return;
+          const frame = axeFrames[message.side];
+          if (event.source !== frame.contentWindow || message.testId !== activeAxeTestId || !pendingAxeTests.has(message.side)) {
+            return;
+          }
+          if (message.type === "axe-test-result") {
+            finishAxeTest(message.side, message.results, null);
+          } else if (message.type === "axe-test-error") {
+            finishAxeTest(message.side, null, message.message);
+          }
+        });
+
+        function errorMessage(status, body) {
+          const detail = body && (body.message || body.error || body.errors);
+          return detail
+            ? `AI Horde returned ${status}: ${typeof detail === "string" ? detail : JSON.stringify(detail)}`
+            : `AI Horde returned HTTP ${status}.`;
+        }
+
+        async function loadModels() {
+          try {
+            const response = await fetch(`${api}/status/models?type=text`);
+            if (!response.ok) {
+              throw new Error(`Could not load AI Horde models (HTTP ${response.status}).`);
+            }
+            const models = await response.json();
+            const usableModels = Array.isArray(models)
+              ? models.filter((model) => !/debug|test|dummy/i.test(model.name || ""))
+              : [];
+            if (usableModels.length === 0) {
+              throw new Error("AI Horde did not report any available text models.");
+            }
+
+            usableModels.sort((a, b) => (a.eta ?? Infinity) - (b.eta ?? Infinity) || (b.performance ?? 0) - (a.performance ?? 0));
+            modelSelect.replaceChildren();
+            for (const model of usableModels) {
+              const option = document.createElement("option");
+              option.value = model.name;
+              const wait = Number.isFinite(model.eta) ? ` · estimated wait ${Math.max(0, Math.round(model.eta))}s` : "";
+              option.textContent = `${model.name}${wait}`;
+              modelSelect.append(option);
+            }
+            modelSelect.disabled = false;
+            runButton.disabled = false;
+            setRunStatus(`${usableModels.length} text models available. Select one and run the comparison.`);
+          } catch (error) {
+            modelSelect.replaceChildren(new Option("Models unavailable", ""));
+            setRunStatus(`${error.message} Check your connection and reload the page to try again.`, true);
+          }
+        }
+
+        async function fetchSkill(signal) {
+          const response = await fetch(skillUrl, { signal });
+          if (!response.ok) {
+            throw new Error(`Could not load the WCAG skill from GitHub (HTTP ${response.status}).`);
+          }
+          return response.text();
+        }
+
+        async function submitGeneration(prompt, model, maxTokens, signal) {
+          const response = await fetch(`${api}/generate/text/async`, {
+            method: "POST",
+            headers,
+            signal,
+            body: JSON.stringify({
+              prompt,
+              models: [model],
+              params: {
+                max_length: maxTokens,
+                temperature: 0.2,
+                top_p: 0.9,
+                rep_pen: 1.05
+              }
+            })
+          });
+          const body = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(errorMessage(response.status, body));
+          }
+          if (!body || !body.id) {
+            throw new Error("AI Horde accepted no job ID for this request.");
+          }
+          return body.id;
+        }
+
+        function wait(milliseconds, signal) {
+          return new Promise((resolve, reject) => {
+            const onAbort = () => {
+              clearTimeout(timeout);
+              reject(new DOMException("The comparison was stopped.", "AbortError"));
+            };
+            const timeout = setTimeout(() => {
+              signal.removeEventListener("abort", onAbort);
+              resolve();
+            }, milliseconds);
+            signal.addEventListener("abort", onAbort, { once: true });
+          });
+        }
+
+        async function waitForGeneration(id, side, signal) {
+          const startedAt = Date.now();
+          while (Date.now() - startedAt < 15 * 60 * 1000) {
+            await wait(5000, signal);
+            const response = await fetch(`${api}/generate/text/status/${encodeURIComponent(id)}`, {
+              headers: { "apikey": headers.apikey },
+              signal
+            });
+            const body = await response.json().catch(() => null);
+            if (!response.ok) {
+              throw new Error(errorMessage(response.status, body));
+            }
+            if (body && body.faulted) {
+              throw new Error("AI Horde could not complete this generation. Try another model.");
+            }
+            if (body && body.done) {
+              const text = body.generations && body.generations[0] && body.generations[0].text;
+              if (!text) {
+                throw new Error("AI Horde completed the job but returned no generated text.");
+              }
+              return text;
+            }
+            if (body && body.waiting !== undefined) {
+              const queue = Number.isFinite(body.queue_position) ? ` (queue position ${body.queue_position})` : "";
+              setPanelStatus(side, body.waiting > 0 ? `Waiting for a free worker${queue}…` : "Generating your page…");
+            } else {
+              setPanelStatus(side, "Waiting for the free model…");
+            }
+          }
+          throw new Error("This generation has taken more than 15 minutes. Stop waiting and try another model.");
+        }
+
+        function extractHtml(text) {
+          const trimmed = text.trim();
+          const fenced = trimmed.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/i);
+          const source = fenced ? fenced[1].trim() : trimmed;
+          const start = source.search(/<!doctype html|<html\b/i);
+          if (start < 0) return source;
+          const html = source.slice(start);
+          const end = html.toLowerCase().lastIndexOf("</html>");
+          return end < 0 ? html : html.slice(0, end + "</html>".length);
+        }
+
+        async function runSide(side, prompt, model, skill, maxTokens, signal) {
+          const prefix = "You are a frontend code generator. Return only a complete, standalone HTML document. Do not use external libraries or assets.";
+          const instructions = side === "a"
+            ? `${prefix}\n\nApply the following wcag-skill instructions when creating the page:\n\n${skill}`
+            : prefix;
+          const fullPrompt = `${instructions}\n\nUser request:\n${prompt}`;
+          setPanelStatus(side, "Submitting generation request…");
+          const id = await submitGeneration(fullPrompt, model, maxTokens, signal);
+          setPanelStatus(side, "Request queued with AI Horde…");
+          const generated = await waitForGeneration(id, side, signal);
+          const html = extractHtml(generated);
+          document.querySelector(`#code-${side}`).textContent = html;
+          document.querySelector(`#preview-${side}`).srcdoc = html;
+          generatedPages[side] = true;
+          axeButton.disabled = !(generatedPages.a && generatedPages.b && axeVersionsReady);
+          axeRunStatus.textContent = generatedPages.a && generatedPages.b
+            ? "Both pages are ready. Run axe-core on each page with the button below."
+            : "Waiting for both generated pages before axe-core can run.";
+          setPanelStatus(side, "Generation complete. Preview and HTML are ready.");
+        }
+
+        async function runAxeTests() {
+          if (!generatedPages.a || !generatedPages.b || !axeVersionsReady || axeTestsRunning) return;
+          axeTestsRunning = true;
+          failedAxeTests = 0;
+          pendingAxeTests.clear();
+          runButton.disabled = true;
+          modelSelect.disabled = true;
+          axeVersionSelect.disabled = true;
+          axeButton.disabled = true;
+          axeRunStatus.classList.remove("error");
+          axeRunStatus.textContent = `Verifying axe-core ${axeVersionSelect.value} on all three CDNs…`;
+
+          try {
+            const version = axeVersionSelect.value;
+            if (!await isAxeVersionAvailable(version)) {
+              throw new Error(`axe-core ${version} could not be verified on all three CDNs. Choose another version and retry.`);
+            }
+            const sources = getAxeCdnSources(version);
+            activeAxeTestId = crypto.randomUUID();
+            const testPages = Object.fromEntries(["a", "b"].map((side) => [
+              side,
+              buildAxeTestPage(
+                document.querySelector(`#code-${side}`).textContent,
+                side,
+                activeAxeTestId,
+                sources
+              )
+            ]));
+            axeRunStatus.textContent = `Using axe-core ${version} on both pages. Running accessibility rules…`;
+
+            for (const side of ["a", "b"]) {
+              pendingAxeTests.add(side);
+              setAxeStatus(side, `Running axe-core ${version}…`);
+              document.querySelector(`#axe-details-${side}`).hidden = true;
+              document.querySelector(`#axe-report-${side}`).textContent = "";
+              const frame = axeFrames[side];
+              frame.setAttribute("sandbox", "allow-scripts");
+              frame.srcdoc = testPages[side];
+              axeTimeouts.set(side, setTimeout(() => {
+                finishAxeTest(side, null, "Timed out waiting for the page or axe-core CDN.");
+              }, 60000));
+            }
+          } catch (error) {
+            activeAxeTestId = null;
+            axeTestsRunning = false;
+            runButton.disabled = false;
+            modelSelect.disabled = false;
+            axeVersionSelect.disabled = false;
+            axeButton.disabled = !(generatedPages.a && generatedPages.b && axeVersionsReady);
+            axeRunStatus.textContent = `Could not start axe-core tests: ${error.message}`;
+            axeRunStatus.classList.add("error");
+            for (const side of ["a", "b"]) {
+              setAxeStatus(side, error.message, true);
+            }
+          }
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const prompt = promptInput.value.trim();
+          const model = modelSelect.value;
+          const maxTokens = Number(maxTokensInput.value);
+          if (!prompt || !model || activeController || axeTestsRunning) return;
+
+          activeController = new AbortController();
+          const { signal } = activeController;
+          runButton.disabled = true;
+          modelSelect.disabled = true;
+          maxTokensInput.disabled = true;
+          axeButton.disabled = true;
+          cancelButton.hidden = false;
+          setRunStatus("Loading the skill and starting both generations…");
+          axeRunStatus.textContent = "Generate both pages before running the accessibility tests.";
+          axeRunStatus.classList.remove("error");
+          for (const side of ["a", "b"]) {
+            generatedPages[side] = false;
+            document.querySelector(`#code-${side}`).textContent = "Generating…";
+            document.querySelector(`#preview-${side}`).srcdoc = "<!doctype html><html lang='en'><meta charset='utf-8'><body style='font:16px system-ui;padding:1rem;color:#34445c'>Waiting for the model…</body></html>";
+            setAxeStatus(side, "No test run yet.");
+            document.querySelector(`#axe-details-${side}`).hidden = true;
+            document.querySelector(`#axe-report-${side}`).textContent = "";
+            setPanelStatus(side, "Preparing request…");
+          }
+
+          try {
+            const skill = await fetchSkill(signal);
+            setRunStatus("Both requests use the same model, prompt, and generation settings.");
+            const outcomes = await Promise.allSettled([
+              runSide("a", prompt, model, skill, maxTokens, signal),
+              runSide("b", prompt, model, "", maxTokens, signal)
+            ]);
+            const failures = outcomes.filter((outcome) => outcome.status === "rejected");
+            for (let index = 0; index < outcomes.length; index += 1) {
+              const outcome = outcomes[index];
+              if (outcome.status === "rejected") {
+                const side = index === 0 ? "a" : "b";
+                const message = outcome.reason && outcome.reason.name === "AbortError"
+                  ? "Stopped waiting. The submitted job may still finish on AI Horde."
+                  : outcome.reason.message || "The generation failed.";
+                setPanelStatus(side, message, outcome.reason && outcome.reason.name !== "AbortError");
+                document.querySelector(`#code-${side}`).textContent = message;
+              }
+            }
+            if (signal.aborted) {
+              setRunStatus("Stopped waiting. Any submitted job may still finish on AI Horde.");
+            } else if (failures.length) {
+              setRunStatus(`${failures.length} generation${failures.length === 1 ? "" : "s"} failed. See the affected side for details.`, true);
+            } else {
+              setRunStatus("Both generations are complete. Compare the previews and source; this is not a conformance result.");
+            }
+          } catch (error) {
+            if (error.name === "AbortError") {
+              setRunStatus("Stopped waiting. Any submitted job may still finish on AI Horde.");
+              for (const side of ["a", "b"]) setPanelStatus(side, "Stopped waiting. The submitted job may still finish on AI Horde.");
+            } else {
+              setRunStatus(`${error.message} No comparison was completed.`, true);
+              for (const side of ["a", "b"]) setPanelStatus(side, error.message, true);
+            }
+          } finally {
+            activeController = null;
+            runButton.disabled = false;
+            modelSelect.disabled = false;
+            maxTokensInput.disabled = false;
+            cancelButton.hidden = true;
+          }
+        });
+
+        maxTokensInput.addEventListener("input", () => {
+          maxTokensOutput.value = `${maxTokensInput.value} tokens`;
+        });
+
+        cancelButton.addEventListener("click", () => {
+          if (activeController) activeController.abort();
+        });
+
+        axeButton.addEventListener("click", runAxeTests);
+        axeVersionRetry.addEventListener("click", loadAxeVersions);
+
+        loadModels();
+        loadAxeVersions();
+      })();
+    </script>
+  </body>
+</html>
