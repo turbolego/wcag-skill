@@ -4,8 +4,7 @@
 publish-web.yml's previous design *waited* up to 30 minutes for ClawHub's
 security-scan queue to naturally promote the just-published version, and
 failed if it didn't. That passively left the repo running ahead of a stuck
-ClawHub release (e.g. GitHub SKILL.md = 2.0.20 while ClawHub `latest` stayed
-2.0.14). This script actively forces the sync instead:
+ClawHub release. This script actively requests a scan and sync instead:
 
   1. Re-run the LLM security scan for the published version and write the
      result back to the version (POST /skills/-/scan with update:true), so a
@@ -19,8 +18,8 @@ Every endpoint is owner-gated, so this needs the ClawHub token (the same
 never printed.
 
 Usage:
-  CLAWHUB_TOKEN=clh_... python3 scripts/clawhub-force-sync.py --version 2.0.20
-  python3 scripts/clawhub-force-sync.py --version 2.0.20 --dry-run
+  python3 scripts/clawhub-force-sync.py
+  python3 scripts/clawhub-force-sync.py --dry-run
 """
 import argparse
 import json
@@ -29,6 +28,8 @@ import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from skill_version import ROOT, check_versions, parse_version
 
 DEFAULT_REGISTRY = "https://clawhub.ai"
 DEFAULT_SLUG = "wcag-skill"
@@ -63,14 +64,14 @@ def api_call(base: str, method: str, path: str, body: dict | None, token: str):
     except HTTPError as e:
         detail = e.read().decode(errors="replace") if e.fp else ""
         raise SystemExit(f"API {method} {path} -> HTTP {e.code}: {detail[:500]}")
-    except URLError as e:
-        raise SystemExit(f"API {method} {path} -> network error: {e.reason}")
+    except (URLError, TimeoutError) as e:
+        raise SystemExit(f"API {method} {path} -> network error: {e}")
     if not raw:
         return {}
     try:
         return json.loads(raw)
-    except json.JSONDecodeError:
-        return {"raw": raw.decode(errors="replace")}
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"API {method} {path} -> invalid JSON response") from e
 
 
 def live_version(base: str, slug: str) -> str:
@@ -102,7 +103,9 @@ def force_scan(base: str, slug: str, version: str, token: str, poll_timeout: int
         note = f" (queued ahead: {queue.get('queuedAhead')})" if queue.get("queuedAhead") is not None else ""
         print(f"[force-sync] scan {status}{note} writtenBack={st.get('writtenBack')}")
         if status == "succeeded":
-            print("[force-sync] security scan passed and written back to the version")
+            if st.get("writtenBack") is not True:
+                raise SystemExit("Scan completed but was not written back; refusing to promote the version.")
+            print("[force-sync] security scan completed and was written back to the version")
             return
         if status == "failed":
             raise SystemExit(
@@ -128,27 +131,29 @@ def set_tag(base: str, slug: str, version: str, token: str, tag: str) -> None:
     )
 
 
-def wait_for_live(base: str, slug: str, version: str, timeout: int) -> None:
+def wait_for_live(base: str, slug: str, version: str, timeout: int, tag: str = "latest") -> None:
     print(f"[force-sync] Waiting for ClawHub live version to become {version} ...")
     deadline = time.time() + timeout
     while True:
-        current = live_version(base, slug)
-        if current == version:
+        data = api_call(base, "GET", f"/api/v1/skills/{slug}", None, "")
+        current = str((data.get("latestVersion") or {}).get("version") or "")
+        tagged = (data.get("skill") or {}).get("tags", {}).get(tag)
+        if current == version and tagged == version:
             print(f"[force-sync] ✅ ClawHub live version is now {version}")
             return
         if time.time() > deadline:
             raise SystemExit(
-                f"ClawHub live is still {current!r} after {timeout}s, expected {version!r}. "
+                f"ClawHub live={current!r}, {tag} tag={tagged!r} after {timeout}s, expected {version!r}. "
                 "The scan may still be propagating; re-run this step."
             )
-        print(f"[force-sync] live={current!r}, polling...")
+        print(f"[force-sync] live={current!r}, {tag} tag={tagged!r}, polling...")
         time.sleep(10)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Force ClawHub's live version to match a target.")
     parser.add_argument("--slug", default=DEFAULT_SLUG)
-    parser.add_argument("--version", required=True, help="Target version to make live")
+    parser.add_argument("--version", help="Target version to make live (default: checked repository version)")
     parser.add_argument("--registry", default=DEFAULT_REGISTRY)
     parser.add_argument("--tag", default="latest", help="Which tag to point at the version")
     parser.add_argument("--scan-timeout", type=int, default=600, help="Max seconds to wait for the security scan")
@@ -156,6 +161,8 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Print the calls, do not execute")
     args = parser.parse_args()
 
+    args.version = args.version or check_versions(ROOT)
+    parse_version(args.version)
     token = get_token() if not args.dry_run else ""
 
     print(f"{'[dry-run]' if args.dry_run else '[force-sync]'} Target: {args.slug} @ {args.version}")
@@ -173,13 +180,10 @@ def main() -> None:
         return
 
     current = live_version(args.registry, args.slug)
-    if current == args.version:
-        print(f"[force-sync] ClawHub already live at {args.version}; nothing to do.")
-        return
-
-    force_scan(args.registry, args.slug, args.version, token, args.scan_timeout)
+    if current != args.version:
+        force_scan(args.registry, args.slug, args.version, token, args.scan_timeout)
     set_tag(args.registry, args.slug, args.version, token, args.tag)
-    wait_for_live(args.registry, args.slug, args.version, args.live_timeout)
+    wait_for_live(args.registry, args.slug, args.version, args.live_timeout, args.tag)
 
 
 if __name__ == "__main__":

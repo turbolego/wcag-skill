@@ -7,9 +7,11 @@ stores files directly and skips the buggy per-file ticket verification.
 
 Required: CLAWHUB_TOKEN environment variable (a clh_... API token).
 """
-import argparse, fnmatch, hashlib, json, os, re, sys, uuid
+import argparse, fnmatch, hashlib, json, os, sys, uuid
 from pathlib import Path
 from urllib.request import Request, urlopen
+
+from skill_version import check_versions, read_frontmatter_version
 
 SKILL_DIR = Path(os.environ.get("GITHUB_WORKSPACE", Path(__file__).resolve().parent.parent))
 SKILL_SLUG = "wcag-skill"
@@ -88,15 +90,7 @@ def read_version_from_frontmatter(skill_dir: Path) -> str:
     to the leading `---` frontmatter block and fail fast when it (or
     the version key) is missing.
     """
-    content = (skill_dir / "SKILL.md").read_text()
-    fm = re.match(r"(?s)^\s*---\n(.*?)\n---\n", content)
-    if not fm:
-        raise SystemExit("Could not find YAML frontmatter in SKILL.md")
-    frontmatter = fm.group(1)
-    match = re.search(r"(?m)^\s*version:\s*['\"]?([^'\"\s]+)", frontmatter)
-    if not match:
-        raise SystemExit("Could not find metadata.version in SKILL.md frontmatter")
-    return match.group(1)
+    return read_frontmatter_version(skill_dir / "SKILL.md")
 
 
 def build_multipart(
@@ -159,7 +153,7 @@ def main() -> None:
         token = get_token()
         print(f"✓ Token present ({len(token)} chars)")
 
-    version = read_version_from_frontmatter(SKILL_DIR)
+    version = check_versions(SKILL_DIR)
     if args.expected_version and version != args.expected_version:
         raise SystemExit(
             f"Version mismatch: SKILL.md has {version}, expected {args.expected_version}"
@@ -183,7 +177,7 @@ def main() -> None:
         "version": version,
         "changelog": "",
         "acceptLicenseTerms": True,
-        "tags": ["universal-design", "wcag", "accessibility"],
+        "tags": ["latest"],
         "categories": ["development"],
         "topics": ["universal-design", "wcag", "accessibility"],
         "files": [

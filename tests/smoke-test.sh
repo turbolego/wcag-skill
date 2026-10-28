@@ -31,6 +31,8 @@ trap 'rm -rf "$tmp_dir"' EXIT
 python3 -m py_compile benchmark/scripts/check-tag-coverage.py
 python3 tests/test-publish-web.py
 python3 tests/test-bump-skill-version.py
+python3 tests/test-clawhub-force-sync.py
+python3 scripts/read-version.py --check
 python3 tests/test-wcag-412-checker.py
 python3 tests/test-wcag-focus-guidance.py
 node --check scripts/run-w3c-validator.mjs
@@ -93,5 +95,8 @@ fi
 ! grep -q '__pycache__\\|\.pyc\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/publish-web.py\"' "$tmp_dir/publish_dry_run.txt"
 ! grep -q '\"path\": \"scripts/bump-skill-version.py\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"scripts/read-version.py\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"scripts/skill_version.py\"' "$tmp_dir/publish_dry_run.txt"
+! grep -q '\"path\": \"scripts/clawhub-force-sync.py\"' "$tmp_dir/publish_dry_run.txt"
 
 echo "WCAG skill smoke tests passed."

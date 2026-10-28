@@ -18,8 +18,7 @@ ClawHub outage — the exact failure this script exists to prevent. A
 confirmed 404 (the skill has genuinely never been published) is the only
 case treated as "no versions yet".
 
-Keeps SKILL.md's metadata.version, README.md's version badge, and
-skill-card.md's version note in sync.
+Keeps every release-version mirror in sync, including the npm manifests.
 
 Usage:
   scripts/bump-skill-version.py            # print the next version only
@@ -27,31 +26,21 @@ Usage:
 """
 import argparse
 import json
-import re
-import sys
 from pathlib import Path
+from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
+from skill_version import check_versions, parse_version, read_frontmatter_version, sync_versions
+
 ROOT = Path(__file__).resolve().parent.parent
-SKILL_MD = ROOT / "SKILL.md"
-README_MD = ROOT / "README.md"
-SKILL_CARD_MD = ROOT / "skill-card.md"
 SKILL_SLUG = "wcag-skill"
 
 Version = tuple[int, int, int]
 
 
 def read_local_version() -> str:
-    """Extract metadata.version from SKILL.md YAML frontmatter only."""
-    content = SKILL_MD.read_text()
-    fm = re.match(r"(?s)^\s*---\n(.*?)\n---\n", content)
-    if not fm:
-        raise SystemExit("Could not find YAML frontmatter in SKILL.md")
-    match = re.search(r"(?m)^\s*version:\s*['\"]?([^'\"\s]+)", fm.group(1))
-    if not match:
-        raise SystemExit("Could not find metadata.version in SKILL.md frontmatter")
-    return match.group(1)
+    return read_frontmatter_version(ROOT / "SKILL.md")
 
 
 def read_live_versions() -> list[str]:
@@ -65,12 +54,25 @@ def read_live_versions() -> list[str]:
     the failure this script exists to prevent.
     """
     url = f"https://clawhub.ai/api/v1/skills/{SKILL_SLUG}/versions"
+    versions: list[str] = []
+    cursors: set[str] = set()
     try:
-        with urlopen(url, timeout=15) as resp:
-            data = json.load(resp)
+        while True:
+            with urlopen(url, timeout=60) as resp:
+                data = json.load(resp)
+            versions.extend(item["version"] for item in data["items"])
+            cursor = data.get("nextCursor")
+            if cursor is None:
+                return versions
+            if not isinstance(cursor, str) or not cursor or cursor in cursors:
+                raise ValueError("Invalid or repeated registry pagination cursor")
+            cursors.add(cursor)
+            url = f"https://clawhub.ai/api/v1/skills/{SKILL_SLUG}/versions?{urlencode({'cursor': cursor})}"
     except HTTPError as exc:
         if exc.code == 404:
-            return []
+            if not versions:
+                return []
+            raise SystemExit("ClawHub pagination returned HTTP 404; refusing incomplete version history") from exc
         raise SystemExit(
             f"ClawHub registry query failed with HTTP {exc.code}; refusing to "
             "guess the published version list. Retry once the registry is "
@@ -81,27 +83,17 @@ def read_live_versions() -> list[str]:
             f"Could not reach ClawHub registry ({exc}); refusing to guess the "
             "published version list. Retry once the registry is reachable."
         ) from exc
-    except (ValueError, json.JSONDecodeError) as exc:
+    except ValueError as exc:
         raise SystemExit(
             f"ClawHub registry returned an unparseable response ({exc}); "
             "refusing to guess the published version list."
         ) from exc
 
-    try:
-        return [item["version"] for item in data["items"]]
-    except (KeyError, TypeError) as exc:
+    except (AttributeError, KeyError, TypeError) as exc:
         raise SystemExit(
             f"ClawHub registry response was missing expected fields ({exc}); "
             "refusing to guess the published version list."
         ) from exc
-
-
-def parse_version(value: str) -> Version:
-    parts = value.split(".")
-    if len(parts) != 3 or not all(part.isdigit() for part in parts):
-        raise SystemExit(f"Version {value!r} is not in MAJOR.MINOR.PATCH form")
-    major, minor, patch = (int(part) for part in parts)
-    return (major, minor, patch)
 
 
 def format_version(version: Version) -> str:
@@ -116,22 +108,7 @@ def next_version() -> str:
 
 
 def apply(version: str) -> None:
-    """Rewrite the version in every file that mirrors it, or fail loudly."""
-    replacements = (
-        (SKILL_MD, r"(?m)^(\s*version:\s*)['\"]?[^'\"\s]+", rf"\g<1>{version}"),
-        (README_MD, r"(badge/version-)[^-]+(-blue)", rf"\g<1>{version}\g<2>"),
-        (
-            SKILL_CARD_MD,
-            r"(?m)^\d+\.\d+\.\d+(?= \(source: `SKILL\.md`)",
-            version,
-        ),
-    )
-    for path, pattern, replacement in replacements:
-        text = path.read_text()
-        new_text, count = re.subn(pattern, replacement, text, count=1)
-        if count == 0:
-            raise SystemExit(f"Failed to update version in {path}")
-        path.write_text(new_text)
+    sync_versions(ROOT, version)
 
 
 def main() -> None:
@@ -141,6 +118,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    check_versions(ROOT)
     version = next_version()
     if args.write:
         apply(version)

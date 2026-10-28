@@ -22,6 +22,9 @@ scripts/publish-web.py
 # CI-only version-bump helper invoked by the publish workflows; not part of
 # the skill's runtime content.
 scripts/bump-skill-version.py
+scripts/read-version.py
+scripts/skill_version.py
+scripts/clawhub-force-sync.py
 
 # Generated artifacts that must never ship in a release
 __pycache__/

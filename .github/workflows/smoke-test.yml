@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "SKILL.md"
+      - "README.md"
       - "skill-card.md"
       - "package.json"
       - "package-lock.json"
@@ -14,10 +15,12 @@ on:
       - "tests/**"
       - ".clawhubignore"
       - ".github/workflows/smoke-test.yml"
+      - ".github/workflows/publish*.yml"
   push:
     branches: [main]
     paths:
       - "SKILL.md"
+      - "README.md"
       - "skill-card.md"
       - "package.json"
       - "package-lock.json"
@@ -28,6 +31,7 @@ on:
       - "tests/**"
       - ".clawhubignore"
       - ".github/workflows/smoke-test.yml"
+      - ".github/workflows/publish*.yml"
 
 permissions:
   contents: read
@@ -37,6 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Check release version consistency
+        run: python3 scripts/read-version.py --check
       - uses: actions/setup-node@v7
         with:
           node-version: 26

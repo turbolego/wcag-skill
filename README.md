@@ -2,7 +2,7 @@
 
 ## install from Clawhub.ai: https://clawhub.ai/turbolego/skills/wcag-skill
 
-[![Version](https://img.shields.io/badge/version-2.0.20-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
+[![Version](https://img.shields.io/badge/version-2.0.21-blue)](https://clawhub.ai/turbolego/skills/wcag-skill)
 [![License](https://img.shields.io/badge/license-MIT--0-green)](LICENSE)
 
 An agent skill for building, auditing, and repairing WCAG 2.2 web content.
@@ -123,13 +123,37 @@ when benchmark scoring is explicitly requested.
 
 ## Publishing
 
-Publish to ClawHub with:
+`SKILL.md`'s `metadata.version` is the release source of truth. Its mirrors in
+this README, `skill-card.md`, `package.json`, and both root version fields in
+`package-lock.json` must agree. Dependency versions and historical test fixtures
+are independent of the skill release.
 
 ```bash
-clawhub login
-clawhub skill publish .   # initial publish
-clawhub sync              # update all changed skills
+python3 scripts/read-version.py --check  # CI and upload consistency gate
+# After intentionally editing metadata.version in SKILL.md:
+python3 scripts/read-version.py --sync
+# Or select a patch newer than both the repository and all registry versions:
+python3 scripts/bump-skill-version.py --write
+python3 scripts/publish-web.py --dry-run
 ```
+
+Release-related pushes to `main` automatically create and commit a synchronized
+patch version newer than all recorded ClawHub versions, then upload that exact
+checkout through the multipart API using the `CLAWHUB_TOKEN` Actions secret.
+Changes to the dependency manifests, templates, and publishing workflows also
+trigger releases. The workflow token needs permission to write repository
+contents; branch rules must allow the release commit.
+
+Both **Publish to ClawHub** workflows use the same publisher and concurrency
+group. A manual run creates a new release by default; disable `bump_version`
+to retry the currently declared version. Re-running a failed workflow also
+reuses the declared version. `dry_run` never commits or uploads.
+
+An accepted upload is not proof of publication: the workflow requests a
+security rescan with write-back, updates `latest`, and verifies both ClawHub's
+public live version and its `latest` tag. Scan failure, missing write-back, or
+a version mismatch fails the job rather than reporting a successful release.
+No new version can be made public until ClawHub's checks allow it.
 
 ## Related
 
