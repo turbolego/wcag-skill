@@ -24,6 +24,7 @@ evidence, not proof of conformance.
 | `templates/playwright-state.spec.ts` | Playwright example for testing programmatic and application state together |
 | `docs/index.html` | GitHub Pages site with interactive before-and-after WCAG 2.2 demos |
 | `docs/wcag-skill-demo.html` | Side-by-side AI-generated page comparison with and without the WCAG skill, including axe-core tests |
+| `docs/wcag-skill-demo-prompt.md` | Compact, self-contained generation rules adapted from the skill and references for the AI Horde demo; excludes audit tooling and conformance claims |
 | `benchmark/` | Optional AI-WCAG-Gauntlet extension; not a production conformance gate |
 | `tests/` | Fixture and CI smoke test for documented bundled commands |
 

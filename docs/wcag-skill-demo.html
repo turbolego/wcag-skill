@@ -204,7 +204,7 @@
       <section class="intro" aria-labelledby="page-title">
         <p class="eyebrow">A controlled comparison</p>
         <h1 id="page-title">Does an accessibility skill change the result?</h1>
-        <p>Send the same prompt to the same free AI model twice. Side A gets the current wcag-skill instructions; Side B gets no WCAG skill. Compare each generated page in its preview and inspect the HTML.</p>
+        <p>Send the same prompt to the same free AI model twice. Side A gets a compact generation guide derived from wcag-skill and its references; Side B gets no WCAG guide. Compare each generated page and run axe-core separately to measure the difference. Results vary by model and run.</p>
         <p class="notice"><strong>Before you start:</strong> Your prompt is sent to AI Horde, a public volunteer-run inference service. Do not include passwords, personal information, or confidential content. This demo shows generated examples; it does not certify WCAG conformance.</p>
       </section>
 
@@ -221,12 +221,12 @@
               <label for="max-tokens">Requested maximum output tokens per page</label>
               <input id="max-tokens" name="max-tokens" type="range" min="512" max="4096" step="512" value="512" aria-describedby="max-tokens-help max-tokens-value">
               <output id="max-tokens-value" for="max-tokens" aria-live="polite">512 tokens</output>
-              <p id="max-tokens-help" class="help">This sets the requested output cap, not a model capability. AI Horde does not publish per-model output limits in its public model status. Anonymous requests above 512 tokens may require kudos or be rejected during high demand. 4096 is this demo’s slider ceiling, not a guaranteed model limit.</p>
+              <p id="max-tokens-help" class="help">This sets the requested output cap, not a model capability. Both sides request a 2048-token context; prompts that do not fit are rejected rather than truncated. Anonymous requests above 512 output tokens may require kudos or be rejected. Larger output caps may not fit the context or the selected worker.</p>
             </div>
             <div>
               <label for="prompt">Prompt to use for both sides</label>
               <textarea id="prompt" name="prompt" required>Create a simple, responsive one-page event signup page for a neighborhood garden workshop. Include a short introduction, event details, name and email fields, and a clear registration button. Return a complete standalone HTML document; do not use external libraries or assets.</textarea>
-              <p class="help">The prompt, selected model, output-token cap, and other generation settings are identical for both sides. Only Side A receives the WCAG skill.</p>
+              <p class="help">The prompt, selected model, context size, output-token cap, and other generation settings are identical for both sides. Only Side A receives the WCAG generation guide.</p>
             </div>
           </div>
           <div class="actions">
@@ -297,6 +297,7 @@
     <footer>
       <div class="footer-inner">
         <p>Inference by <a href="https://aihorde.net/">AI Horde</a>. The free public service may have variable wait times or availability.</p>
+        <p>Demo prompt: <a href="./wcag-skill-demo-prompt.md">WCAG generation guide</a>, adapted from the skill and its accessibility references. Automated results are not a conformance claim.</p>
         <p>Provider examples: <a href="https://github.com/turbolego/BotGauntlet/blob/main/docs/PROVIDERS.md">BotGauntlet free inference providers</a>. Skill source: <a href="https://github.com/turbolego/wcag-skill/blob/main/SKILL.md">wcag-skill/SKILL.md</a>.</p>
       </div>
     </footer>
@@ -304,7 +305,7 @@
     <script>
       (() => {
         const api = "https://aihorde.net/api/v2";
-        const skillUrl = "https://raw.githubusercontent.com/turbolego/wcag-skill/main/SKILL.md";
+        const skillUrl = "./wcag-skill-demo-prompt.md";
         const axeTags = ["wcag2a", "wcag2aa", "wcag2aaa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
         const headers = {
           "Content-Type": "application/json",
@@ -657,7 +658,7 @@
         async function fetchSkill(signal) {
           const response = await fetch(skillUrl, { signal });
           if (!response.ok) {
-            throw new Error(`Could not load the WCAG skill from GitHub (HTTP ${response.status}).`);
+            throw new Error(`Could not load the demo WCAG generation guide (HTTP ${response.status}).`);
           }
           return response.text();
         }
@@ -670,7 +671,9 @@
             body: JSON.stringify({
               prompt,
               models: [model],
+              context_fit: "reject",
               params: {
+                max_context_length: 2048,
                 max_length: maxTokens,
                 temperature: 0.2,
                 top_p: 0.9,

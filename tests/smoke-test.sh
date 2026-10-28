@@ -36,6 +36,7 @@ python3 scripts/read-version.py --check
 python3 tests/test-wcag-412-checker.py
 python3 tests/test-wcag-focus-guidance.py
 node --check scripts/run-w3c-validator.mjs
+node --test tests/test-demo-prompt.mjs
 bash scripts/a11y-audit.sh --help >/dev/null
 
 node scripts/run-w3c-validator.mjs tests/fixtures/valid-page.html "$tmp_dir/w3c_source_html_report.json" http://localhost:8000/valid-page.html
