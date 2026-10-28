@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
-"""Force ClawHub's live version to match a target version.
+"""Wait for publication checks, then synchronize ClawHub's latest pointers.
 
-publish-web.yml's previous design *waited* up to 30 minutes for ClawHub's
-security-scan queue to naturally promote the just-published version, and
-failed if it didn't. That passively left the repo running ahead of a stuck
-ClawHub release. This script actively requests a scan and sync instead:
+Pending versions are hidden from public version reads. The authenticated
+publication endpoint distinguishes pending uploads from missing ones and
+reports failed or blocked pre-publication checks. An on-demand rescan is NOT
+a substitute for those checks; use --rescan only for an already published
+version. No client can force a pending artifact past ClawHub's release gate.
 
-  1. Re-run the LLM security scan for the published version and write the
-     result back to the version (POST /skills/-/scan with update:true), so a
-     version stuck in "pending" actually gets recorded.
-  2. Point the skill's `latest` tag at the target version
-     (POST /skills/{slug}/tags/latest).
-  3. Poll GET /skills/{slug} until `latestVersion.version` equals the target.
-
-Every endpoint is owner-gated, so this needs the ClawHub token (the same
-`CLAWHUB_TOKEN` the upload step uses). It is read from the environment and is
-never printed.
+Requires the owner's CLAWHUB_TOKEN, read from the environment and never printed.
 
 Usage:
   python3 scripts/clawhub-force-sync.py
@@ -24,9 +16,9 @@ Usage:
 import argparse
 import json
 import os
-import sys
 import time
 from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 from skill_version import ROOT, check_versions, parse_version
@@ -74,14 +66,45 @@ def api_call(base: str, method: str, path: str, body: dict | None, token: str):
         raise SystemExit(f"API {method} {path} -> invalid JSON response") from e
 
 
-def live_version(base: str, slug: str) -> str:
-    data = api_call(base, "GET", f"/api/v1/skills/{slug}", None, "")
-    # This endpoint is public (no auth needed); the empty token is fine.
-    return str(data.get("latestVersion", {}).get("version", "") or "")
+def wait_for_publication(base: str, slug: str, version: str, token: str,
+                        timeout: int, owner: str) -> None:
+    path = (
+        f"/api/v1/skills/{quote(slug, safe='')}/versions/{quote(version, safe='')}"
+        f"/publication?{urlencode({'ownerHandle': owner})}"
+    )
+    deadline = time.monotonic() + timeout
+    while True:
+        publication = api_call(base, "GET", path, None, token)["publication"]
+        if publication.get("version") != version:
+            raise SystemExit(f"Publication API returned the wrong version: {publication}")
+        stage = publication.get("stage")
+        print(f"[force-sync] publication={stage} retrying={publication.get('retrying')} "
+              f"checks={publication.get('checks')}", flush=True)
+        if stage == "published":
+            return
+        if stage in {"failed", "blocked", "expired", "unavailable"} or (
+            stage in {"checks_failed", "checks_incomplete"} and not publication.get("retrying")
+        ):
+            raise SystemExit(
+                f"ClawHub cannot publish {slug} {version}: {publication}. "
+                "The upload is retained; contact ClawHub support with this exact version. "
+                "Do not bump again or try to bypass publication checks."
+            )
+        if stage not in {
+            "pending_checks", "checks_failed", "checks_incomplete", "ready_to_finalize", "finalizing",
+        }:
+            raise SystemExit(f"Unknown ClawHub publication stage: {stage!r}")
+        if time.monotonic() >= deadline:
+            raise SystemExit(
+                f"ClawHub publication for {slug} {version} is still {stage!r} after {timeout}s: "
+                f"{publication.get('checks')}. The accepted upload needs ClawHub's workers; "
+                "retry this version without bumping, or contact ClawHub support."
+            )
+        time.sleep(10)
 
 
 def force_scan(base: str, slug: str, version: str, token: str, poll_timeout: int) -> None:
-    """Re-run + write back the security scan so a pending version gets recorded."""
+    """Re-run and write back an already published version's security scan."""
     print(f"[force-sync] Submitting scan-update for {slug} {version} ...")
     sub = api_call(
         base,
@@ -155,8 +178,10 @@ def main() -> None:
     parser.add_argument("--slug", default=DEFAULT_SLUG)
     parser.add_argument("--version", help="Target version to make live (default: checked repository version)")
     parser.add_argument("--registry", default=DEFAULT_REGISTRY)
+    parser.add_argument("--owner", default="turbolego", help="ClawHub publisher handle")
     parser.add_argument("--tag", default="latest", help="Which tag to point at the version")
-    parser.add_argument("--scan-timeout", type=int, default=600, help="Max seconds to wait for the security scan")
+    parser.add_argument("--scan-timeout", type=int, default=600, help="Max seconds for publication checks or rescan")
+    parser.add_argument("--rescan", action="store_true", help="Also rescan an already published version")
     parser.add_argument("--live-timeout", type=int, default=120, help="Max seconds to wait for the live tag to flip")
     parser.add_argument("--dry-run", action="store_true", help="Print the calls, do not execute")
     args = parser.parse_args()
@@ -166,21 +191,18 @@ def main() -> None:
     token = get_token() if not args.dry_run else ""
 
     print(f"{'[dry-run]' if args.dry_run else '[force-sync]'} Target: {args.slug} @ {args.version}")
-    print(
-        f"  1) POST /api/v1/skills/-/scan  "
-        f'{{"source":{{"kind":"published","slug":"{args.slug}","version":"{args.version}"}},'
-        f'"update":true}}'
-    )
-    print(f"  2) GET  /api/v1/skills/-/scan/{{scanId}}  (poll until succeeded)")
+    print(f"  1) GET /api/v1/skills/{args.slug}/versions/{args.version}/publication (wait until published)")
+    if args.rescan:
+        print("  2) POST /api/v1/skills/-/scan with update:true, then poll for write-back")
     print(f"  3) POST /api/v1/skills/{args.slug}/tags/{args.tag}  {{\"version\":\"{args.version}\"}}")
-    print(f"  4) GET  /api/v1/skills/{args.slug}  (wait until latestVersion == {args.version})")
+    print(f"  4) GET /api/v1/skills/{args.slug} (verify live version and tag)")
 
     if args.dry_run:
         print("[dry-run] No calls executed.")
         return
 
-    current = live_version(args.registry, args.slug)
-    if current != args.version:
+    wait_for_publication(args.registry, args.slug, args.version, token, args.scan_timeout, args.owner)
+    if args.rescan:
         force_scan(args.registry, args.slug, args.version, token, args.scan_timeout)
     set_tag(args.registry, args.slug, args.version, token, args.tag)
     wait_for_live(args.registry, args.slug, args.version, args.live_timeout, args.tag)

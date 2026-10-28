@@ -79,12 +79,14 @@ jobs:
 
       - name: Resolve target and ClawHub state
         id: resolve
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
         run: |
           TARGET="$(python3 scripts/read-version.py --check)"
           python3 - "$TARGET" <<'PY'
           import json, os, sys
           from urllib.error import HTTPError
-          from urllib.request import urlopen
+          from urllib.request import Request, urlopen
           target = sys.argv[1]
           base = "https://clawhub.ai/api/v1/skills/wcag-skill"
           def get(url):
@@ -92,7 +94,15 @@ jobs:
                   return json.load(response)
           live = get(base)["latestVersion"]["version"]
           try:
-              recorded = get(f"{base}/versions/{target}")["version"]["version"] == target
+              request = Request(
+                  f"{base}/versions/{target}/publication?ownerHandle=turbolego",
+                  headers={"Authorization": "Bearer " + os.environ["CLAWHUB_TOKEN"]},
+              )
+              publication = get(request)["publication"]
+              if publication["version"] != target:
+                  raise SystemExit(f"Publication API version mismatch: {publication}")
+              recorded = True
+              print(f"Existing upload: {publication}")
           except HTTPError as error:
               if error.code != 404:
                   raise

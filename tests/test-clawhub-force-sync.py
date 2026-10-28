@@ -52,13 +52,36 @@ with mock.patch.object(sync, "api_call", return_value={
 with contextlib.redirect_stdout(io.StringIO()), \
      mock.patch.object(sys, "argv", ["clawhub-force-sync.py", "--version", "1.2.3"]), \
      mock.patch.object(sync, "get_token", return_value="test-token"), \
-     mock.patch.object(sync, "live_version", return_value="1.2.3"), \
+     mock.patch.object(sync, "wait_for_publication") as publication, \
      mock.patch.object(sync, "force_scan") as scan, \
      mock.patch.object(sync, "set_tag") as tag, \
      mock.patch.object(sync, "wait_for_live"):
     sync.main()
+    publication.assert_called_once()
     scan.assert_not_called()
     tag.assert_called_once()
+
+for stage, retrying in (("blocked", False), ("failed", False), ("expired", False),
+                        ("unavailable", False), ("checks_failed", False),
+                        ("checks_incomplete", False), ("unknown", False),
+                        ("pending_checks", True)):
+    with mock.patch.object(sync, "api_call", return_value={
+        "publication": {"version": "1.2.3", "stage": stage, "retrying": retrying},
+    }):
+        try:
+            sync.wait_for_publication("https://registry.example", "example", "1.2.3",
+                                      "test-token", -1, "owner")
+            raise AssertionError(f"Unpublished artifact accepted: {stage}")
+        except SystemExit:
+            pass
+
+with mock.patch.object(sync, "api_call", return_value={
+    "publication": {"version": "1.2.3", "stage": "published"},
+}) as api:
+    sync.wait_for_publication("https://registry.example", "example", "1.2.3",
+                              "test-token", 10, "owner")
+    assert api.call_args.args[2].endswith("/versions/1.2.3/publication?ownerHandle=owner")
+    assert api.call_args.args[4] == "test-token"
 
 with contextlib.redirect_stdout(io.StringIO()), \
      mock.patch.object(sys, "argv", ["clawhub-force-sync.py", "--dry-run"]), \

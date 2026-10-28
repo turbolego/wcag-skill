@@ -4,8 +4,12 @@ import importlib.util
 import contextlib
 import io
 import json
+import os
 import sys
+import tempfile
+import textwrap
 from pathlib import Path
+from urllib.error import HTTPError
 from unittest import mock
 
 
@@ -58,5 +62,43 @@ with mock.patch.object(sys, "argv", ["publish-web.py", "--dry-run"]), \
     except SystemExit as error:
         assert str(error) == "mismatch"
     upload.assert_not_called()
+
+# Execute the workflow's actual resolver against owner-only pending records.
+workflow = (ROOT / ".github/workflows/publish-web.yml").read_text()
+resolver = textwrap.dedent(
+    workflow.split('python3 - "$TARGET" <<\'PY\'\n', 1)[1].split("\n          PY", 1)[0]
+)
+for stage in ("pending_checks", "published"):
+    with tempfile.TemporaryDirectory() as temporary:
+        output_path = Path(temporary) / "output"
+        with contextlib.redirect_stdout(io.StringIO()), \
+             mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output_path), "CLAWHUB_TOKEN": "test-token"}), \
+             mock.patch.object(sys, "argv", ["-", "1.2.3"]), \
+             mock.patch("urllib.request.urlopen", side_effect=[
+                 io.BytesIO(json.dumps({"latestVersion": {"version": "1.2.2"}}).encode()),
+                 io.BytesIO(json.dumps({"publication": {"version": "1.2.3", "stage": stage}}).encode()),
+             ]) as fetch:
+            exec(compile(resolver, "publish-web.yml resolver", "exec"), {})
+        assert "recorded=1" in output_path.read_text()
+        owner_request = fetch.call_args_list[1].args[0]
+        assert owner_request.full_url.endswith("/versions/1.2.3/publication?ownerHandle=turbolego")
+        assert owner_request.get_header("Authorization") == "Bearer " + "test-token"
+
+for status in (404, 401):
+    with tempfile.TemporaryDirectory() as temporary:
+        output_path = Path(temporary) / "output"
+        with contextlib.redirect_stdout(io.StringIO()), \
+             mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output_path), "CLAWHUB_TOKEN": "test-token"}), \
+             mock.patch.object(sys, "argv", ["-", "1.2.3"]), \
+             mock.patch("urllib.request.urlopen", side_effect=[
+                 io.BytesIO(json.dumps({"latestVersion": {"version": "1.2.2"}}).encode()),
+                 HTTPError("https://registry.example", status, "test", {}, None),
+             ]):
+            try:
+                exec(compile(resolver, "publish-web.yml resolver", "exec"), {})
+                assert status == 404, "Invalid owner credentials were accepted"
+                assert "recorded=0" in output_path.read_text()
+            except HTTPError as error:
+                assert status == 401 and error.code == 401
 
 print("Publish request regression test passed.")

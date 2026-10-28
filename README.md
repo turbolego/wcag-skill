@@ -149,11 +149,18 @@ group. A manual run creates a new release by default; disable `bump_version`
 to retry the currently declared version. Re-running a failed workflow also
 reuses the declared version. `dry_run` never commits or uploads.
 
-An accepted upload is not proof of publication: the workflow requests a
-security rescan with write-back, updates `latest`, and verifies both ClawHub's
-public live version and its `latest` tag. Scan failure, missing write-back, or
-a version mismatch fails the job rather than reporting a successful release.
-No new version can be made public until ClawHub's checks allow it.
+An accepted upload is not proof of publication. The workflow uses the owner's
+authenticated publication-status endpoint (pending versions are hidden from
+public version reads), waits for pre-publication checks, updates `latest`, and
+verifies both ClawHub's public live version and its `latest` tag. Failed checks,
+blocked publication, timeouts, and version mismatches fail the job rather than
+reporting success. Retry the retained version without bumping; for stalled or
+failed checks, contact ClawHub support with the exact version and reported
+check statuses.
+
+`scripts/clawhub-force-sync.py --rescan` optionally requests a scan with
+write-back for an **already published** version. A separate on-demand scan
+cannot replace pre-publication checks or unstick ClawHub's publish workers.
 
 ## Related
 
