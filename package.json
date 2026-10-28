@@ -1,7 +1,7 @@
 {
   "name": "wcag-skill-tools",
   "private": true,
-  "version": "2.0.21",
+  "version": "2.0.22",
   "description": "Pinned CLI dependencies for scripts/a11y-audit.sh. Not published; install with `npm ci` before running the audit wrapper.",
   "engines": {
     "node": ">=22"
