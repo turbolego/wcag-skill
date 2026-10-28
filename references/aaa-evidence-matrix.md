@@ -36,8 +36,8 @@ tool warning into a pass without explaining the decision.
 | 2.4.8 | Location | For a multi-page set, identify the user’s current location through breadcrumbs, navigation, or another mechanism. |
 | 2.4.9 | Link Purpose (Link Only) | Review every link in isolation; its accessible name must identify purpose except for the criterion’s exceptions. |
 | 2.4.10 | Section Headings | Review long/complex content for descriptive section headings where headings organise content. |
-| 2.4.12 | Focus Not Obscured (Enhanced) | Tab through every breakpoint, overlay, sticky region, error state, and menu; no part of the focused component may be hidden by author content. |
-| 2.4.13 | Focus Appearance | Measure a focus indicator at least equal to a two-CSS-pixel perimeter of the component and ≥3:1 changed-pixel contrast. |
+| 2.4.12 | Focus Not Obscured (Enhanced, AAA) | Tab through breakpoints, overlays, sticky regions, error states, and menus; no part of a focused component may be hidden by author-created content. |
+| 2.4.13 | Focus Appearance (AAA) | When the focus indicator is visible and neither exception applies, verify that its area is at least the area of a two-CSS-pixel-thick perimeter of the unfocused component or sub-component, and that the same pixels have at least 3:1 contrast between focused and unfocused states. Exceptions: the user agent determines the indicator and the author cannot adjust it, or the indicator and its background color are not modified by the author. |
 | 2.5.5 | Target Size (Enhanced) | Measure pointer targets at ≥44×44 CSS px or document the specific exception. |
 | 2.5.6 | Concurrent Input Mechanisms | Confirm no author-created restriction disables a supported input mechanism. |
 | 3.1.3 | Unusual Words | Identify idioms, jargon, and specialised terms; provide a mechanism for definition when needed. |
@@ -59,6 +59,16 @@ Focus Not Obscured (Minimum), 2.5.7 Dragging Movements, 2.5.8 Target Size
 (Minimum), 3.2.6 Consistent Help, 3.3.7 Redundant Entry, and 3.3.8 Accessible
 Authentication (Minimum). Consult the W3C Quick Reference for the full
 inherited set.
+
+The following focus-related A/AA criteria are separate from the AAA focus
+criteria above. Record each applicable criterion in the inherited A/AA
+evidence rows:
+
+| SC | Criterion and level | Required focus evidence |
+|---|---|---|
+| 1.4.11 | Non-text Contrast (AA) | Check visual information needed to identify UI components and states (except inactive components or appearances determined by the user agent and not modified by the author), and parts of graphics required to understand content (except an essential presentation), against adjacent colors at ≥3:1. This is distinct from SC 2.4.13's focused/unfocused same-pixel comparison. |
+| 2.4.7 | Focus Visible (AA) | Verify every keyboard-operable user interface has at least one mode of operation in which its keyboard focus indicator is visible. Keep the indicator visible while focus is shown. |
+| 2.4.11 | Focus Not Obscured (Minimum, AA) | Verify that when a component receives keyboard focus, it is not entirely hidden by author-created content. Content opened by the user may obscure focus if the user can reveal the focused component without advancing focus. Do not apply SC 2.4.12's stronger “no part hidden” requirement as the AA threshold. |
 
 ## Dynamic-state evidence for WCAG 4.1.2
 
