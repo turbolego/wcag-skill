@@ -72,13 +72,24 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 - Label every form control, group related controls with `<fieldset><legend>`,
   use appropriate input types and `autocomplete`, preserve entered data after
   recoverable errors, and identify errors in text as well as colour.
-- Keep DOM order aligned with reading and Tab order. Provide a skip link,
-  visible focus, keyboard operation, and no keyboard trap.
+- Keep DOM order aligned with reading and Tab order. Provide a mechanism to
+  bypass repeated blocks where applicable (such as a skip link), visible focus,
+  keyboard operation, and no keyboard trap.
 - Do not communicate status, errors, required fields, or instructions by colour,
   position, shape, or sound alone. Respect `prefers-reduced-motion`.
 - Ensure pointer targets are at least 24×24 CSS px (AA) or 44×44 CSS px (AAA) unless an exception applies.
-- Ensure dragging movements can be operated with a single pointer without dragging (AA, unless dragging is essential) and provide alternatives or cancellation; timing limits on dragging are covered by separate timing criteria.
-- Make sure the keyboard focus indicator is visible and has sufficient contrast (AA, WCAG 2.2 SC 2.4.11 Focus Appearance: at least 2 CSS px perimeter and 3:1 contrast).
+- Ensure all functionality that uses dragging can also be achieved by a single
+  pointer without dragging (AA), unless dragging is essential or the
+  functionality is determined by the user agent and not modified by the
+  author.
+- Ensure keyboard focus is visible when operated by keyboard (AA, WCAG 2.2 SC
+  2.4.7 Focus Visible).
+- Meet WCAG 2.2 SC 1.4.11 Non-text Contrast (AA): visual information needed to
+  identify applicable UI components and states, and parts of graphics needed
+  to understand content, has at least 3:1 contrast against adjacent colors,
+  subject to the criterion's exceptions.
+- Meet WCAG 2.2 SC 2.4.11 Focus Not Obscured (Minimum, AA): when a component
+  receives keyboard focus, it is not entirely hidden by author-created content.
 - For WCAG 4.1.2, inventory interactive components and dynamic states. Use
   [`scripts/check-wcag-412.py`](scripts/check-wcag-412.py) as a source-markup
   candidate check, then verify rendered name, role, value, and state. Any
@@ -124,14 +135,19 @@ If you encounter heap-limit errors, increase the Node old space via `NODE_OPTION
 |---|---:|---:|
 | Normal text contrast | 4.5:1 | 7:1 |
 | Large text contrast | 3:1 | 4.5:1 |
-| UI component / focus contrast | 3:1 (AA; includes the 2.4.11 focus-appearance perimeter/contrast rule) | 3:1 |
-| Pointer target | 24×24 CSS px | 44×44 CSS px unless a documented exception applies |
-| Dragging movements | AA (WCAG 2.2) | AAA requires pointer target ≥44×44 CSS px (time limits covered by separate timing criteria) |
+| UI component / state contrast (SC 1.4.11 Non-text Contrast) | At least 3:1 against adjacent colors, subject to exceptions | Same AA requirement |
+| Focus Appearance (SC 2.4.13, AAA) | No 2.4.13 requirement at AA | Indicator area at least as large as a two-CSS-pixel-thick perimeter of the unfocused component; at least 3:1 contrast between the same pixels in focused and unfocused states |
+| Pointer target (SC 2.5.8 AA / SC 2.5.5 AAA) | 24×24 CSS px, subject to SC 2.5.8 exceptions | 44×44 CSS px, subject to SC 2.5.5 exceptions |
+| Dragging movements (SC 2.5.7) | Provide a single-pointer alternative that does not require dragging, unless an exception applies | Same AA requirement |
 
-For AA (WCAG 2.2 SC 2.4.11 Focus Appearance), make the keyboard focus indicator
-at least as large as a two-CSS-pixel perimeter of the unfocused component and
-give changed pixels at least 3:1 contrast. Ensure no part of a focused
-component is obscured by author-created content.
+For AAA, WCAG 2.2 SC 2.4.12 Focus Not Obscured (Enhanced, AAA) requires that no
+part of a focused component is hidden by author-created content. SC 2.4.13
+Focus Appearance (AAA) requires an indicator area at least as large as a
+two-CSS-pixel-thick perimeter of the unfocused component and at least 3:1
+contrast between the same pixels in focused and unfocused states, subject to
+the criterion's exceptions. These are AAA requirements, not AA requirements;
+the stronger focus appearance may be used as an optional recommendation for AA
+projects.
 
 ## Audit → triage → fix → verify
 
