@@ -51,9 +51,6 @@ concurrency:
   group: clawhub-publish
   cancel-in-progress: false
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE20: "true"
-
 jobs:
   publish:
     runs-on: ubuntu-latest
