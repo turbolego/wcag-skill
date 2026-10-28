@@ -32,6 +32,7 @@ python3 -m py_compile benchmark/scripts/check-tag-coverage.py
 python3 tests/test-publish-web.py
 python3 tests/test-bump-skill-version.py
 python3 tests/test-wcag-412-checker.py
+python3 tests/test-wcag-focus-guidance.py
 node --check scripts/run-w3c-validator.mjs
 bash scripts/a11y-audit.sh --help >/dev/null
 
