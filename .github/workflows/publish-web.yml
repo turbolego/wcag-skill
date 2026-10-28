@@ -66,21 +66,11 @@ jobs:
           python3 tests/test-publish-web.py
           python3 tests/test-clawhub-force-sync.py
 
-      - name: Create synchronized release version
-        if: ${{ inputs.dry_run != true && github.run_attempt == 1 && (github.event_name == 'push' || inputs.bump_version) }}
-        run: |
-          VERSION="$(python3 scripts/bump-skill-version.py --write)"
-          python3 scripts/read-version.py --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add SKILL.md README.md skill-card.md package.json package-lock.json
-          git commit -m "ci: release wcag-skill $VERSION" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
-          git push origin HEAD:main
-
       - name: Resolve target and ClawHub state
         id: resolve
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          CREATE_RELEASE: ${{ inputs.dry_run != true && github.run_attempt == 1 && (github.event_name == 'push' || inputs.bump_version) }}
         run: |
           TARGET="$(python3 scripts/read-version.py --check)"
           python3 - "$TARGET" <<'PY'
@@ -103,6 +93,11 @@ jobs:
                   raise SystemExit(f"Publication API version mismatch: {publication}")
               recorded = True
               print(f"Existing upload: {publication}")
+              if os.environ.get("CREATE_RELEASE") == "true" and publication["stage"] != "published":
+                  raise SystemExit(
+                      f"Refusing to bump past retained release {target}: {publication}. "
+                      "Recover this upload first; retry with bump_version=false."
+                  )
           except HTTPError as error:
               if error.code != 404:
                   raise
@@ -112,29 +107,44 @@ jobs:
           print(f"target(repo)={target} clawhub-live={live} target-already-recorded={recorded}")
           PY
 
+      - name: Create synchronized release version
+        if: ${{ inputs.dry_run != true && github.run_attempt == 1 && (github.event_name == 'push' || inputs.bump_version) }}
+        run: |
+          VERSION="$(python3 scripts/bump-skill-version.py --write)"
+          python3 scripts/read-version.py --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SKILL.md README.md skill-card.md package.json package-lock.json
+          git commit -m "ci: release wcag-skill $VERSION" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push origin HEAD:main
+
+      - name: Read exact release target
+        id: target
+        run: echo "version=$(python3 scripts/read-version.py --check)" >> "$GITHUB_OUTPUT"
+
       - name: Dry run
         if: ${{ inputs.dry_run == true }}
         run: |
-          python3 scripts/publish-web.py --dry-run --expected-version "${{ steps.resolve.outputs.target }}"
-          python3 scripts/clawhub-force-sync.py --dry-run --version "${{ steps.resolve.outputs.target }}"
+          python3 scripts/publish-web.py --dry-run --expected-version "${{ steps.target.outputs.version }}"
+          python3 scripts/clawhub-force-sync.py --dry-run --version "${{ steps.target.outputs.version }}"
 
       - name: Publish to ClawHub if target is not recorded
-        if: ${{ inputs.dry_run != true && steps.resolve.outputs.recorded == '0' }}
+        if: ${{ inputs.dry_run != true && (steps.target.outputs.version != steps.resolve.outputs.target || steps.resolve.outputs.recorded == '0') }}
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-        run: python3 scripts/publish-web.py --expected-version "${{ steps.resolve.outputs.target }}"
+        run: python3 scripts/publish-web.py --expected-version "${{ steps.target.outputs.version }}"
 
       - name: Sync ClawHub live version to target
         if: ${{ inputs.dry_run != true }}
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
-        run: python3 scripts/clawhub-force-sync.py --version "${{ steps.resolve.outputs.target }}"
+        run: python3 scripts/clawhub-force-sync.py --version "${{ steps.target.outputs.version }}"
 
       - name: Verify published release
         if: ${{ inputs.dry_run != true }}
         run: |
           python3 scripts/read-version.py --check
-          python3 - "${{ steps.resolve.outputs.target }}" <<'PY'
+          python3 - "${{ steps.target.outputs.version }}" <<'PY'
           import json, sys
           from urllib.request import urlopen
           with urlopen("https://clawhub.ai/api/v1/skills/wcag-skill", timeout=60) as response:

@@ -84,6 +84,28 @@ for stage in ("pending_checks", "published"):
         assert owner_request.full_url.endswith("/versions/1.2.3/publication?ownerHandle=turbolego")
         assert owner_request.get_header("Authorization") == "Bearer " + "test-token"
 
+for stage in ("pending_checks", "checks_failed", "blocked", "published"):
+    with tempfile.TemporaryDirectory() as temporary:
+        output_path = Path(temporary) / "output"
+        with contextlib.redirect_stdout(io.StringIO()), \
+             mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output_path),
+                                         "CLAWHUB_TOKEN": "test-token", "CREATE_RELEASE": "true"}), \
+             mock.patch.object(sys, "argv", ["-", "1.2.3"]), \
+             mock.patch("urllib.request.urlopen", side_effect=[
+                 io.BytesIO(json.dumps({"latestVersion": {"version": "1.2.2"}}).encode()),
+                 io.BytesIO(json.dumps({"publication": {"version": "1.2.3", "stage": stage}}).encode()),
+             ]):
+            try:
+                exec(compile(resolver, "publish-web.yml resolver", "exec"), {})
+                assert stage == "published", "Bumping past an unpublished release was allowed"
+            except SystemExit as error:
+                assert stage != "published"
+                assert "Refusing to bump past retained release" in str(error)
+                assert not output_path.exists()
+
+assert workflow.index("- name: Resolve target") < workflow.index("- name: Create synchronized")
+assert 'steps.target.outputs.version != steps.resolve.outputs.target' in workflow
+
 for status in (404, 401):
     with tempfile.TemporaryDirectory() as temporary:
         output_path = Path(temporary) / "output"

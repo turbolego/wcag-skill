@@ -149,6 +149,11 @@ group. A manual run creates a new release by default; disable `bump_version`
 to retry the currently declared version. Re-running a failed workflow also
 reuses the declared version. `dry_run` never commits or uploads.
 
+Before creating another release, the workflow checks whether the declared
+version is already retained by ClawHub. If that upload is not yet published,
+it fails **before bumping or committing**. This prevents subsequent pushes
+from accumulating new versions while an earlier publication is stalled.
+
 An accepted upload is not proof of publication. The workflow uses the owner's
 authenticated publication-status endpoint (pending versions are hidden from
 public version reads), waits for pre-publication checks, updates `latest`, and
