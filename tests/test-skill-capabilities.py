@@ -1,4 +1,3 @@
-import json
 import re
 import unittest
 from pathlib import Path
@@ -22,13 +21,10 @@ USED = {
 
 
 class SkillCapabilityTests(unittest.TestCase):
-    def test_allowed_tools_is_an_explicit_minimal_list(self):
-        match = re.search(r"^allowed-tools:\s*(\[.*\])$", FRONTMATTER, re.MULTILINE)
+    def test_allowed_tools_uses_scanner_compatible_capability_string(self):
+        match = re.search(r"^allowed-tools:\s*(.+)$", FRONTMATTER, re.MULTILINE)
         self.assertIsNotNone(match, "SKILL.md must declare allowed-tools")
-        self.assertEqual(
-            json.loads(match.group(1)),
-            ["exec", "read", "write", "edit", "env", "shell"],
-        )
+        self.assertEqual(match.group(1), "Bash, Read, Write, Edit, Env")
 
     def test_every_environment_variable_read_is_declared(self):
         for path, names in USED.items():
