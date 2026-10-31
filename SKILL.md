@@ -1,7 +1,7 @@
 ---
 name: wcag-skill
 description: "Build, audit, and repair web content against WCAG 2.2. Use when: (1) creating accessible HTML/CSS/JS, (2) remediating accessibility defects, (3) running reproducible automated audits, (4) preparing WCAG 2.2 AAA evidence and human-test records, or (5) running the optional AI-WCAG-Gauntlet benchmark."
-allowed-tools: ["exec", "read", "write", "edit", "shell", "env"]
+allowed-tools: ["exec", "read", "write", "edit", "env"]
 metadata:
   version: 2.0.26
   openclaw:
@@ -84,10 +84,9 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 
 ## Capabilities and boundaries
 
-The `allowed-tools` frontmatter declares the agent tools and the `shell` and
-`env` capabilities detected in this skill. It does not sandbox shell commands,
-constrain file paths, or restrict network access. Enforce those limits with the
-host sandbox, container, account permissions, or network policy.
+The `allowed-tools` frontmatter lists the agent-facing tools and environment
+access this skill needs. It does not set the host's shell-execution policy,
+sandbox commands, constrain file paths, or restrict network access.
 
 | Script | Commands run | Reads | Writes | Network |
 |---|---|---|---|---|
@@ -108,6 +107,11 @@ Boundaries:
   or sensitive paths as output destinations; scripts overwrite outputs.
 - Keep the Chrome sandbox enabled outside isolated CI. In CI, the audit wrapper
   disables it unless `AXE_CHROME_EXTRA_ARGS` is set (an empty value keeps it on).
+- Verify execution restrictions in the host runtime; the skill manifest cannot
+  establish them. On OpenClaw, `openclaw approvals get` and
+  `openclaw exec-policy show` report configured/effective execution policy.
+  Use the host's allowlist, approval policy, or sandbox, and verify that it
+  applies to the actual execution host.
 - Shell use is limited to running the listed local audit tools; scripts do not
   install packages, modify system settings, or persist beyond their outputs.
 

@@ -27,7 +27,7 @@ class SkillCapabilityTests(unittest.TestCase):
         self.assertIsNotNone(match, "SKILL.md must declare allowed-tools")
         self.assertEqual(
             json.loads(match.group(1)),
-            ["exec", "read", "write", "edit", "shell", "env"],
+            ["exec", "read", "write", "edit", "env"],
         )
 
     def test_every_environment_variable_read_is_declared(self):
@@ -52,11 +52,13 @@ class SkillCapabilityTests(unittest.TestCase):
                 self.assertTrue((ROOT / path).exists())
                 self.assertIn(f"`{path}", section)
         for phrase in (
-            "does not sandbox shell commands",
+            "does not set the host's shell-execution policy",
             "No script requires or reads credentials",
             "Audit only URLs you are authorized to test",
             "Use a dedicated output directory",
             "Keep the Chrome sandbox enabled outside isolated CI",
+            "openclaw approvals get",
+            "openclaw exec-policy show",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, " ".join(section.split()))
