@@ -42,8 +42,24 @@ third-party flow in scope. Mark a test not applicable only with a rationale.
 1. Trigger each validation error. Confirm the error is identified in text,
    linked to the control where appropriate, preserves valid entries, and can be
    corrected by keyboard and assistive technology.
-2. Test review, correction, confirmation, and reversal paths for submissions
-   involving legal commitments, financial transactions, tests, or data changes.
+2. For every page that requires users to submit information, verify at least
+   one SC 3.3.6 safeguard: submissions are reversible; entered data is checked
+   for input errors (required information omitted or values outside the
+   required format or allowed values) with an opportunity to correct them; or
+   users can review, confirm, and correct information before finalizing.
+   Record which alternative is met. Test consequential workflows only in an
+   authorized staging/test environment with synthetic records and sandbox
+   payments; do not perform live transactions, legal commitments, or record
+   changes without explicit authorization. If safe testing is unavailable,
+   inspect the available evidence and record any test limitation rather than
+   executing a consequential action.
+   Record authorization scope: environment, permitted operations, synthetic
+   records, and transaction limits. Use read-only accounts for inspection and
+   narrowly scoped test accounts for state-changing tests; enforce restrictions
+   through the application/provider or tool host, not this document. Mock or
+   staging success is evidence for that environment, not proof of production
+   behavior. Record unexecuted checks as `Needs human review`, not `Pass` or
+   `Not applicable`.
 3. Test every authentication step with password-manager paste, copy/paste, and
    an alternative that avoids disallowed cognitive tests.
 4. Review help, labels, instructions, unusual words, abbreviations, reading

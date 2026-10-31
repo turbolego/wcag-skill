@@ -46,7 +46,7 @@ tool warning into a pass without explaining the decision.
 | 3.1.6 | Pronunciation | Where pronunciation is necessary to understand a word’s meaning, provide a mechanism for it. |
 | 3.2.5 | Change on Request | Confirm context changes occur only at user request or document the criterion exception. |
 | 3.3.5 | Help | Where context-sensitive help is available, provide it. |
-| 3.3.6 | Error Prevention (All) | For legal, financial, test, or data-changing submissions, demonstrate reversibility, review/correction, and confirmation. |
+| 3.3.6 | Error Prevention (All) | For every page that requires users to submit information, verify at least one: submissions are reversible; entered data is checked for input errors (required information omitted or values outside the required format or allowed values) with an opportunity to correct them; or users can review, confirm, and correct information before finalizing. Record which alternative is met and its evidence. |
 | 3.3.9 | Accessible Authentication (Enhanced) | Test each authentication step; do not require a cognitive-function test unless an allowed alternative or mechanism is available. Do not rely on object recognition or personal content as the enhanced-level exception. |
 
 ## Inherited WCAG 2.2 requirements to call out
