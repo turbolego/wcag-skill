@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -21,6 +22,14 @@ USED = {
 
 
 class SkillCapabilityTests(unittest.TestCase):
+    def test_allowed_tools_is_an_explicit_minimal_list(self):
+        match = re.search(r"^allowed-tools:\s*(\[.*\])$", FRONTMATTER, re.MULTILINE)
+        self.assertIsNotNone(match, "SKILL.md must declare allowed-tools")
+        self.assertEqual(
+            json.loads(match.group(1)),
+            ["exec", "read", "write", "edit"],
+        )
+
     def test_every_environment_variable_read_is_declared(self):
         for path, names in USED.items():
             source = (ROOT / path).read_text(encoding="utf-8")
@@ -43,7 +52,7 @@ class SkillCapabilityTests(unittest.TestCase):
                 self.assertTrue((ROOT / path).exists())
                 self.assertIn(f"`{path}", section)
         for phrase in (
-            "does not enforce restrictions",
+            "does not sandbox shell commands",
             "No script requires or reads credentials",
             "Audit only URLs you are authorized to test",
             "Use a dedicated output directory",
