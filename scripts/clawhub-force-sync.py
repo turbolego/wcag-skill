@@ -25,6 +25,8 @@ from skill_version import ROOT, check_versions, parse_version
 
 DEFAULT_REGISTRY = "https://clawhub.ai"
 DEFAULT_SLUG = "wcag-skill"
+TRANSIENT_HTTP_CODES = {429, 500, 502, 503, 504}
+GET_ATTEMPTS = 4
 
 
 def get_token() -> str:
@@ -38,7 +40,10 @@ def get_token() -> str:
 
 
 def api_call(base: str, method: str, path: str, body: dict | None, token: str):
-    """Authenticated JSON call. Returns parsed JSON; raises SystemExit on error."""
+    """Authenticated JSON call. Returns parsed JSON; raises SystemExit on error.
+
+    Idempotent GET requests are retried on transient server and network errors.
+    """
     url = base.rstrip("/") + path
     data = json.dumps(body).encode() if body is not None else None
     req = Request(
@@ -50,14 +55,23 @@ def api_call(base: str, method: str, path: str, body: dict | None, token: str):
             "Content-Type": "application/json",
         },
     )
-    try:
-        with urlopen(req, timeout=60) as resp:
-            raw = resp.read()
-    except HTTPError as e:
-        detail = e.read().decode(errors="replace") if e.fp else ""
-        raise SystemExit(f"API {method} {path} -> HTTP {e.code}: {detail[:500]}")
-    except (URLError, TimeoutError) as e:
-        raise SystemExit(f"API {method} {path} -> network error: {e}")
+    attempts = GET_ATTEMPTS if method == "GET" else 1
+    for attempt in range(1, attempts + 1):
+        try:
+            with urlopen(req, timeout=60) as resp:
+                raw = resp.read()
+            break
+        except HTTPError as e:
+            detail = e.read().decode(errors="replace") if e.fp else ""
+            error = f"API {method} {path} -> HTTP {e.code}: {detail[:500]}"
+            if e.code not in TRANSIENT_HTTP_CODES or attempt == attempts:
+                raise SystemExit(error)
+        except (URLError, TimeoutError) as e:
+            error = f"API {method} {path} -> network error: {e}"
+            if attempt == attempts:
+                raise SystemExit(error)
+        print(f"[force-sync] {error}; retrying ({attempt}/{attempts - 1})", flush=True)
+        time.sleep(5 * attempt)
     if not raw:
         return {}
     try:

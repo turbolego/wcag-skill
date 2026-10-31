@@ -99,4 +99,40 @@ with mock.patch.object(sync, "api_call", return_value={}) as api:
     sync.set_tag("https://registry.example", "example", "1.2.3", "test-token", "latest")
     assert api.call_args.args[1:4] == ("POST", "/api/v1/skills/example/tags/latest", {"version": "1.2.3"})
 
+
+def http_error(code):
+    return sync.HTTPError("https://registry.example", code, "error", {}, io.BytesIO(b"Server Error"))
+
+
+with contextlib.redirect_stdout(io.StringIO()), \
+     mock.patch.object(sync.time, "sleep") as sleep, \
+     mock.patch.object(sync, "urlopen", side_effect=[
+         http_error(500), sync.URLError("reset"), io.BytesIO(b'{"ok": true}'),
+     ]) as opener:
+    assert sync.api_call("https://registry.example", "GET", "/api/v1/test", None, "") == {"ok": True}
+    assert opener.call_count == 3
+    assert sleep.call_count == 2
+
+with contextlib.redirect_stdout(io.StringIO()), \
+     mock.patch.object(sync.time, "sleep"), \
+     mock.patch.object(sync, "urlopen", side_effect=[http_error(500) for _ in range(sync.GET_ATTEMPTS)]) as opener:
+    try:
+        sync.api_call("https://registry.example", "GET", "/api/v1/test", None, "")
+        raise AssertionError("Persistent server errors were accepted")
+    except SystemExit as error:
+        assert "HTTP 500" in str(error)
+    assert opener.call_count == sync.GET_ATTEMPTS
+
+for method, code in (("GET", 404), ("POST", 500)):
+    with mock.patch.object(sync.time, "sleep") as sleep, \
+         mock.patch.object(sync, "urlopen", side_effect=[http_error(code)]) as opener:
+        try:
+            sync.api_call("https://registry.example", method, "/api/v1/test",
+                          {} if method == "POST" else None, "")
+            raise AssertionError(f"{method} HTTP {code} was accepted")
+        except SystemExit:
+            pass
+        assert opener.call_count == 1
+        sleep.assert_not_called()
+
 print("ClawHub sync regression tests passed.")

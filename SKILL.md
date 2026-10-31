@@ -18,6 +18,30 @@ metadata:
       - name: AXE_CHROMEDRIVER_PATH
         required: false
         description: Explicit Chromedriver binary path for scripts/a11y-audit.sh when auto-detection fails.
+      - name: AXE_CHROME_EXTRA_ARGS
+        required: false
+        description: Space-separated Chrome flags for scripts/a11y-audit.sh. Set to an empty string to keep the Chrome sandbox enabled when CI=true.
+      - name: CI
+        required: false
+        description: When "true" and AXE_CHROME_EXTRA_ARGS is unset, scripts/a11y-audit.sh disables the Chrome sandbox for hosted CI runners.
+      - name: NODE_OPTIONS
+        required: false
+        description: Read and extended by scripts/a11y-audit-limited.sh with a Node heap limit.
+      - name: ULIMIT_PERCENT
+        required: false
+        description: Percentage of available memory used for ulimit -v by scripts/a11y-audit-limited.sh (default 90).
+      - name: ULIMIT_MIN_MB
+        required: false
+        description: Minimum ulimit -v value in MB for scripts/a11y-audit-limited.sh (default 1536).
+      - name: NODE_PERCENT
+        required: false
+        description: Percentage of available memory used for the Node heap by scripts/a11y-audit-limited.sh (default 30).
+      - name: NODE_MIN_MB
+        required: false
+        description: Minimum Node heap in MB for scripts/a11y-audit-limited.sh (default 256).
+      - name: WCAG_TEST_URL
+        required: false
+        description: Page URL for templates/playwright-state.spec.ts (default http://127.0.0.1:8000/).
     install:
       - kind: node
         package: "@axe-core/cli"
@@ -56,6 +80,34 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 > every applicable A, AA, and AAA success criterion for the full page and any
 > complete process. Record an explicit evidence row or non-applicability
 > rationale for each criterion.
+
+## Capabilities and boundaries
+
+This section declares what the bundled scripts need. It documents intent; it
+does not enforce restrictions. Enforce limits with the host sandbox, container,
+account permissions, or network policy.
+
+| Script | Commands run | Reads | Writes | Network |
+|---|---|---|---|---|
+| `scripts/a11y-audit.sh <url> [out-dir]` | `axe`, `pa11y`, `node` (QualWeb CLI), `vnu` via Java, `curl`, `npm root -g`, Chrome/Chromium, Chromedriver | Environment variables in the frontmatter; installed tool paths | `out-dir` (default `a11y-reports/`): four JSON reports, `fetched-page.html`, and a Chrome wrapper script when extra Chrome flags apply | Loads the target URL, its redirects, and subresources in a browser; fetches the page with `curl` |
+| `scripts/a11y-audit-limited.sh` | `free`, `awk`, `cat`, `ulimit`, then `scripts/a11y-audit.sh` | `/proc/meminfo`, cgroup memory files, memory-limit variables, `NODE_OPTIONS` | Same as `a11y-audit.sh`, relative to the skill root | Same as `a11y-audit.sh` |
+| `scripts/run-w3c-validator.mjs <input> <output> [url]` | `vnu` | The input HTML file | The output JSON file | None |
+| `scripts/check-wcag-412.py <html>` | None | The input HTML file | Standard output only | None |
+| `benchmark/scripts/check-tag-coverage.py <html> [tags.json]` | None | The input HTML and tag list | Standard output only | None |
+| `templates/playwright-state.spec.ts` | Playwright browser | `WCAG_TEST_URL` | Playwright output | Loads `WCAG_TEST_URL` |
+
+Boundaries:
+
+- No script requires or reads credentials, tokens, or secrets. Release tooling
+  that uses a publishing token is excluded from the skill bundle.
+- Audit only URLs you are authorized to test. Prefer loopback or staging hosts;
+  the browser tools follow redirects and load third-party subresources.
+- Use a dedicated output directory. Do not pass sensitive files as HTML inputs
+  or sensitive paths as output destinations; scripts overwrite outputs.
+- Keep the Chrome sandbox enabled outside isolated CI. In CI, the audit wrapper
+  disables it unless `AXE_CHROME_EXTRA_ARGS` is set (an empty value keeps it on).
+- Shell use is limited to running the listed local audit tools; scripts do not
+  install packages, modify system settings, or persist beyond their outputs.
 
 ## Build accessible by default
 
