@@ -27,7 +27,7 @@ class SkillCapabilityTests(unittest.TestCase):
         self.assertIsNotNone(match, "SKILL.md must declare allowed-tools")
         self.assertEqual(
             json.loads(match.group(1)),
-            ["exec", "read", "write", "edit"],
+            ["exec", "read", "write", "edit", "shell", "env"],
         )
 
     def test_every_environment_variable_read_is_declared(self):

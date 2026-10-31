@@ -1,7 +1,7 @@
 ---
 name: wcag-skill
 description: "Build, audit, and repair web content against WCAG 2.2. Use when: (1) creating accessible HTML/CSS/JS, (2) remediating accessibility defects, (3) running reproducible automated audits, (4) preparing WCAG 2.2 AAA evidence and human-test records, or (5) running the optional AI-WCAG-Gauntlet benchmark."
-allowed-tools: ["exec", "read", "write", "edit"]
+allowed-tools: ["exec", "read", "write", "edit", "shell", "env"]
 metadata:
   version: 2.0.25
   openclaw:
@@ -84,10 +84,10 @@ HTTP, and treat automated output as evidence—not proof of conformance.
 
 ## Capabilities and boundaries
 
-The `allowed-tools` frontmatter limits the agent tools available to this skill.
-It does not sandbox shell commands, constrain file paths, or restrict network
-access. Enforce those limits with the host sandbox, container, account
-permissions, or network policy.
+The `allowed-tools` frontmatter declares the agent tools and the `shell` and
+`env` capabilities detected in this skill. It does not sandbox shell commands,
+constrain file paths, or restrict network access. Enforce those limits with the
+host sandbox, container, account permissions, or network policy.
 
 | Script | Commands run | Reads | Writes | Network |
 |---|---|---|---|---|
