@@ -17,7 +17,7 @@
     "deepmerge": "4.1.2",
     "follow-redirects": "1.16.2",
     "puppeteer": {
-      "@puppeteer/browsers": "3.2.6"
+      "@puppeteer/browsers": "3.2.7"
     }
   }
 }
