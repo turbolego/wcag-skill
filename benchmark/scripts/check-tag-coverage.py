@@ -4,15 +4,16 @@
 Usage (from the repository root):
   python3 benchmark/scripts/check-tag-coverage.py <index.html> [html_tags.json]
 
-Prints expected/used/missing tag counts and reports unbalanced or unclosed tags.
+Reports obsolete start tags. In benchmark mode, also prints coverage and balance.
 Implements HTML5 optional-end-tag implied-closing rules (option, li, dt/dd,
 tr/td/th, thead/tbody/tfoot, colgroup, p, rt/rp) so legally omitted end tags do
 not cascade into false UNMATCHED/UNCLOSED reports for structural elements.
 HTML comments are stripped before counting, so commented-out tag literals do not
-count toward coverage. Exits nonzero if any tag is missing or a genuine structural
-mismatch exists.
+count toward coverage. Exits nonzero for obsolete tags, missing required tags,
+or a structural mismatch.
 """
 
+import argparse
 import json
 import re
 import sys
@@ -141,6 +142,38 @@ def check_coverage(html, tags_path):
     return missing
 
 
+def check_deprecated(html):
+    rules_path = Path(__file__).resolve().parents[2] / "resources" / "legacy_tags.json"
+    with rules_path.open(encoding="utf-8") as f:
+        deprecated = set(json.load(f)["tags"])
+
+    class DeprecatedParser(HTMLParser):
+        CDATA_CONTENT_ELEMENTS = (
+            "script", "style", "title", "textarea", "xmp", "iframe", "noembed", "noframes",
+        )
+
+        def __init__(self):
+            super().__init__()
+            self.found = set()
+
+        def handle_starttag(self, tag, attrs):
+            if tag in deprecated:
+                self.found.add(tag)
+            if tag == "plaintext":
+                self.set_cdata_mode(tag)
+
+        def handle_startendtag(self, tag, attrs):
+            self.handle_starttag(tag, attrs)
+            if tag in self.CDATA_CONTENT_ELEMENTS:
+                self.set_cdata_mode(tag)
+
+    parser = DeprecatedParser()
+    parser.feed(html)
+    found = sorted(parser.found)
+    print("Deprecated tags present:", ", ".join(found) if found else "none")
+    return found
+
+
 def check_balance(html):
     class P(HTMLParser):
         def __init__(self):
@@ -218,17 +251,18 @@ def check_balance(html):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print(__doc__)
-        sys.exit(1)
-    html_path = sys.argv[1]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("html")
+    parser.add_argument("tags", nargs="?", help="benchmark required-tag JSON")
+    args = parser.parse_args()
     default_tags = Path(__file__).resolve().parent.parent / "resources" / "html_tags.json"
-    tags_path = sys.argv[2] if len(sys.argv) > 2 else str(default_tags)
-    with open(html_path) as f:
+    tags_path = args.tags or default_tags
+    with open(args.html, encoding="utf-8") as f:
         html = f.read()
+    deprecated = check_deprecated(html)
     missing = check_coverage(html, tags_path)
     balance_error = check_balance(html)
-    sys.exit(1 if (missing or balance_error) else 0)
+    sys.exit(1 if (deprecated or missing or balance_error) else 0)
 
 
 if __name__ == "__main__":

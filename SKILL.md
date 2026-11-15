@@ -95,7 +95,8 @@ network access.
 | `scripts/a11y-audit-limited.sh` | `free`, `awk`, `cat`, `ulimit`, then `scripts/a11y-audit.sh` | `/proc/meminfo`, cgroup memory files, memory-limit variables, `NODE_OPTIONS` | Same as `a11y-audit.sh`, relative to the skill root | Same as `a11y-audit.sh` |
 | `scripts/run-w3c-validator.mjs <input> <output> [url]` | `vnu` | The input HTML file | The output JSON file | None |
 | `scripts/check-wcag-412.py <html>` | None | The input HTML file | Standard output only | None |
-| `benchmark/scripts/check-tag-coverage.py <html> [tags.json]` | None | The input HTML and tag list | Standard output only | None |
+| `scripts/check-legacy-markup.py <html-or-directory> [...]` | None | HTML files provided on the command line and `resources/legacy_tags.json` | Standard output only | None |
+| `benchmark/scripts/check-tag-coverage.py <html> [tags.json]` | None | The input HTML, obsolete-tag list, and (in benchmark mode) required-tag list | Standard output only | None |
 | `templates/playwright-state.spec.ts` | Playwright browser | `WCAG_TEST_URL` | Playwright output | Loads `WCAG_TEST_URL` |
 
 Boundaries:
@@ -156,6 +157,43 @@ Boundaries:
   Pa11y, QualWeb, and a static inventory alone cannot establish that it works.
   Follow [`references/dynamic-state-test-protocol.md`](references/dynamic-state-test-protocol.md)
   and record `DYNAMIC TEST REQUIRED` until the transition is tested.
+- Prevent legacy presentation markup, layout tables, div-based layouts that
+  disrupt reading order, low-contrast text, unnamed image links, and unlabelled
+  controls. Follow the repair workflow below for existing pages.
+
+## Legacy markup repair
+
+Preserve visible content, link destinations and fragment targets, language,
+and behavior while replacing obsolete markup. Do not remove content just to
+silence a checker. See [`references/legacy-markup-repair.md`](references/legacy-markup-repair.md)
+for a worked example and verification checklist.
+
+| Legacy pattern | Repair |
+|---|---|
+| `<font>` and presentational `color`/`size` | Semantic text or `<span>` plus CSS; test contrast against the actual background. |
+| `<center>`, `<basefont>` | CSS alignment and root font styles; assess page structure separately. |
+| `<marquee>`, `<blink>` | Preserve the information as static content by default and remove motion/blinking. If automatically moving content lasts more than five seconds alongside other content, provide pause/stop/hide controls unless an exception applies (SC 2.2.2); reduced-motion preferences do not replace required controls. A live region is only for genuinely dynamic updates. |
+| Layout `<table>` | CSS grid/flex; retain real data tables with appropriate headers and `scope`. |
+| Absolutely positioned div clusters | Assess the actual reading order and purpose of each region; use appropriate landmarks without turning every `div` into one. Positioning alone is not an accessibility failure. |
+| Image-only link without a name | Give the image purpose-based `alt` text. Prefer visible link text when available; use `aria-label` only when native naming is unsuitable. |
+| Unlabelled search input | Prefer an explicit visible `<label for>`; wrapping labels and `<fieldset><legend>` for related controls are also appropriate. Do not substitute placeholders for labels. |
+
+Use the numeric contrast targets below: AA is 4.5:1 normal and 3:1 large
+text (SC 1.4.3); AAA is 7:1 normal and 4.5:1 large text (SC 1.4.6),
+subject to each criterion's exceptions. Check actual rendered colors.
+
+```bash
+python3 scripts/check-legacy-markup.py path/to/page.html
+```
+
+This static source inventory reports obsolete elements with file names and
+line numbers as warnings, not WCAG failures. It does not detect presentation
+attributes, layout tables, contrast, names, CSS-generated content, or
+script-rendered markup. Inspect rendered pages and states; run the normal
+audit and manual tests. Landmarks can aid navigation, but the axe `region` rule
+is a best-practice check rather than a WCAG success criterion. Use landmarks
+for regions with a meaningful purpose; nested `<header>` and `<footer>`
+elements do not always expose banner/contentinfo landmarks.
 
 ## Low-memory audit guardrail (script-level)
 
@@ -257,4 +295,7 @@ result. Say “no automated findings” when that is all the tools establish.
 The AI-WCAG-Gauntlet tag-coverage experiment is **not** a production
 accessibility gate. Use it only when the task explicitly requests benchmark
 scoring. Read [`benchmark/README.md`](benchmark/README.md) then; never copy its
-reference template into a benchmark submission.
+reference template into a benchmark submission. Its
+[legacy-repair task](https://github.com/turbolego/AI-WCAG-Gauntlet/blob/main/BENCHMARK.md#legacy-repair-task)
+retains all 113 required tags and adds preservation and legacy checks to the
+validator loop; a production repair does not require benchmark tag coverage.

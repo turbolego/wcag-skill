@@ -34,6 +34,8 @@ python3 tests/test-bump-skill-version.py
 python3 tests/test-clawhub-force-sync.py
 python3 scripts/read-version.py --check
 python3 tests/test-wcag-412-checker.py
+python3 tests/test-legacy-markup-checker.py
+python3 tests/test-legacy-tag-checker.py
 python3 tests/test-wcag-focus-guidance.py
 python3 tests/test-wcag-error-prevention-guidance.py
 python3 tests/test-skill-capabilities.py
