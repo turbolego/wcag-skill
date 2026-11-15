@@ -19,11 +19,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RULES = ROOT / "resources/legacy_tags.json"
 HTML_SUFFIXES = {".htm", ".html", ".xhtml"}
-IGNORED_CONTAINERS = {"code", "pre", "kbd", "samp"}
-VOID_ELEMENTS = {
-    "area", "base", "br", "col", "embed", "hr", "img", "input",
-    "link", "meta", "param", "source", "track", "wbr",
-}
 
 
 class LegacyElementParser(HTMLParser):
@@ -32,29 +27,14 @@ class LegacyElementParser(HTMLParser):
         self.path = path
         self.obsolete = obsolete
         self.findings = []
-        self.ignored_stack = []
 
     def handle_starttag(self, tag, attrs):
-        if self.ignored_stack:
-            if tag not in VOID_ELEMENTS:
-                self.ignored_stack.append(tag)
-            return
-        if tag in IGNORED_CONTAINERS:
-            self.ignored_stack.append(tag)
-            return
         if tag in self.obsolete:
             line, _ = self.getpos()
             self.findings.append((self.path, line, tag))
 
     def handle_startendtag(self, tag, attrs):
-        if not self.ignored_stack and tag not in IGNORED_CONTAINERS and tag in self.obsolete:
-            line, _ = self.getpos()
-            self.findings.append((self.path, line, tag))
-
-    def handle_endtag(self, tag):
-        if tag in self.ignored_stack:
-            index = len(self.ignored_stack) - 1 - self.ignored_stack[::-1].index(tag)
-            del self.ignored_stack[index:]
+        self.handle_starttag(tag, attrs)
 
 
 def input_files(paths):
