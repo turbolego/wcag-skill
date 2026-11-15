@@ -15,7 +15,7 @@
   },
   "overrides": {
     "deepmerge": "4.1.2",
-    "follow-redirects": "1.16.2",
+    "follow-redirects": "1.16.3",
     "puppeteer": {
       "@puppeteer/browsers": "3.2.6"
     }
