@@ -18,6 +18,9 @@ evidence, not proof of conformance.
 | `skill-card.md` | Release record covering purpose, dependencies, risks, outputs, evidence, and ethical considerations |
 | `scripts/a11y-audit.sh` | Tested wrapper for axe, Pa11y, QualWeb, and Nu reports |
 | `scripts/check-wcag-412.py` | Static source-markup inventory of likely interactive and stateful WCAG 4.1.2 components |
+| `scripts/check-legacy-markup.py` | Static inventory of obsolete HTML elements with file and line numbers |
+| `references/legacy-markup-repair.md` | Legacy modernization guidance and worked example |
+| `benchmark/scripts/check-tag-coverage.py` | Benchmark tag coverage, balance, and obsolete-tag source check |
 | `references/aaa-evidence-matrix.md` | WCAG 2.2 AAA evidence template and applicability prompts |
 | `references/manual-test-protocol.md` | Required keyboard, reflow, focus, state, media, and assistive-technology checks |
 | `references/dynamic-state-test-protocol.md` | WCAG 4.1.2 inventory, interaction evidence, and assistive-technology review |

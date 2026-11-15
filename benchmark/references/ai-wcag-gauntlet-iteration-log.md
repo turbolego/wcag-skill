@@ -34,9 +34,10 @@ Model under test: `deepseek-ai/deepseek-v4-pro` via nvidia provider, label "Herm
    against it → 404 at repo root → CSS never applied → axe target-size kept failing.
    Fix: absolute URLs with %20 encoding:
    `/AI-WCAG-Gauntlet/benchmarks/DeepSeek%20V4%20Pro/<folder>/style.css`.
-2. `<selectedcontent>` (new-ish HTML element, required by html_tags.json) fails W3C
-   inside `<select>` but passes inside a plain `<div>`. The tag checker only greps for
-   the literal string.
+2. `<selectedcontent>` is required by html_tags.json. The historical workaround
+   of placing it in a plain `<div>` satisfied the old literal tag check, but is
+   not a valid placement recommendation. Follow the current Gauntlet
+   instructions for a customizable `<select>` and validate with current tools.
 3. target-size fix: `nav a { min-height: 24px; display: inline-block; padding: 4px 6px; margin: 2px; }`
    (min-height is the critical part; inline style in `<head>` also works).
 4. Tag coverage: HTML comments are stripped by a custom scanner (see strip_comments()) before `TAG_RE = r"<\s*([a-zA-Z][a-zA-Z0-9\-]*)\b"` via `re.findall`,

@@ -15,8 +15,11 @@ constraint, not evidence of WCAG conformance.
    python3 benchmark/scripts/check-tag-coverage.py <submission-directory>/index.html
    ```
 
-4. Run the Gauntlet test suite and retain its output separately from production
-   accessibility reports.
+4. For a [legacy-repair task](https://github.com/turbolego/AI-WCAG-Gauntlet/blob/main/BENCHMARK.md#legacy-repair-task),
+   preserve the fixture's content, destinations, and behavior while removing
+   obsolete markup. All 113 required tags still apply in that task. Run the
+   Gauntlet test suite, including its legacy and preservation checks, and retain
+   its output separately from production accessibility reports.
 
 ## Integrity rule
 
@@ -24,5 +27,10 @@ constraint, not evidence of WCAG conformance.
 the bare starter into a benchmark submission. A valid benchmark run must contain
 an original implementation tailored to its prompt.
 
-The tag checker uses `benchmark/resources/html_tags.json` and no longer relies
-on an absent root-level `resources/` directory.
+The benchmark checker uses `benchmark/resources/html_tags.json` for its 113
+required tags and `resources/legacy_tags.json` as the shared obsolete-element
+list. It is a benchmark pre-check, not the production legacy-audit tool or the
+Gauntlet's full legacy-pattern and preservation checker. Production repairs
+can use [`scripts/check-legacy-markup.py`](../scripts/check-legacy-markup.py)
+for a source inventory, then follow the production validator and manual-test
+workflow.
