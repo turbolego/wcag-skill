@@ -1,0 +1,16 @@
+id: negative-trigger-002
+name: Negative Trigger - General React Question
+description: Confirm the skill does not activate for general web-development questions unrelated to accessibility.
+tags:
+  - negative-trigger
+inputs:
+  prompt: "Explain the difference between React state and props in two sentences."
+expected:
+  should_trigger: false
+graders:
+  - type: text
+    name: omits-skill-keywords
+    config:
+      not_contains:
+        - "skill"
+        - "wcag"

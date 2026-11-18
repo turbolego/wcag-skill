@@ -1,0 +1,16 @@
+id: positive-trigger-001
+name: Positive Trigger - WCAG AA Audit Guidance
+description: Confirm the skill activates for a concrete WCAG 2.2 AA audit request.
+tags:
+  - positive-trigger
+inputs:
+  prompt: "For a login page, give me a concise WCAG 2.2 AA audit checklist focused on form labels, error identification, keyboard focus, and contrast. Do not access any website."
+expected:
+  should_trigger: true
+graders:
+  - type: text
+    name: includes-wcag-audit-guidance
+    config:
+      contains:
+        - "WCAG 2.2 AA"
+        - "2.4.7"

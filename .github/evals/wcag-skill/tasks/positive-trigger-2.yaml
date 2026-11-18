@@ -1,0 +1,16 @@
+id: positive-trigger-002
+name: Positive Trigger - Accessible Contact Form
+description: Confirm the skill activates for a concrete accessible-HTML implementation request.
+tags:
+  - positive-trigger
+inputs:
+  prompt: "Create a short HTML contact form with visible labels for every field and a text error message for invalid input. Include keyboard-friendly submit behavior and briefly explain the accessibility choices."
+expected:
+  should_trigger: true
+graders:
+  - type: text
+    name: includes-form-accessibility
+    config:
+      contains:
+        - "<label"
+        - "error"

@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+BENCHMARK_GUIDE = (ROOT / "benchmark" / "README.md").read_text(encoding="utf-8")
 FRONTMATTER = SKILL.split("---", 2)[1]
 DECLARED = set(re.findall(r"^\s*- name: ([A-Z0-9_]+)$", FRONTMATTER, re.MULTILINE))
 
@@ -21,6 +22,28 @@ USED = {
 
 
 class SkillCapabilityTests(unittest.TestCase):
+    def test_benchmark_preflight_is_mandatory_and_unscored(self):
+        preflight = BENCHMARK_GUIDE.split(
+            "### Mandatory preflight before scoring", 1
+        )[1].split("\n### Scored run", 1)[0]
+        normalized_preflight = " ".join(preflight.split())
+        for validator in ("tag coverage", "W3C", "axe", "Pa11y", "QualWeb"):
+            with self.subTest(validator=validator):
+                self.assertIn(validator, normalized_preflight)
+        self.assertIn("before its first invocation", normalized_preflight.lower())
+        self.assertIn("must not change the counter", normalized_preflight)
+        self.assertIn("repeat **all five** preflight checks", normalized_preflight)
+        normalized_skill = " ".join(SKILL.split())
+        self.assertIn("Never use a scored test-suite run as a preflight", normalized_skill)
+
+    def test_reference_template_cannot_be_submitted_for_a_score(self):
+        guide_integrity = BENCHMARK_GUIDE.split("## Integrity rule", 1)[1]
+        template = (ROOT / "benchmark" / "templates" / "index.html").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Never copy a template", guide_integrity)
+        self.assertIn("Never copy this file into a scored run", template)
+
     def test_allowed_tools_uses_scanner_compatible_capability_string(self):
         match = re.search(r"^allowed-tools:\s*(.+)$", FRONTMATTER, re.MULTILINE)
         self.assertIsNotNone(match, "SKILL.md must declare allowed-tools")

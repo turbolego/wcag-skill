@@ -1,0 +1,22 @@
+id: positive-trigger-004
+name: Positive Trigger - Repair Findings Without Concealment
+description: Cover the missing tags, invalid nesting, and frame-tested regression from the benchmark.
+tags:
+  - positive-trigger
+  - benchmark-preflight
+inputs:
+  prompt: "A benchmark preflight reports missing del, ol, and optgroup tags, W3C rejects optgroup inside datalist, and Pa11y reports frame-tested on a sandboxed iframe. Explain the repairs and retest gate without executing commands. Address whether moving the iframe into template is a real fix; include how to handle a QualWeb report containing error with failedCount: 0. Use the terms select, datalist, same-origin, template, and tool failure."
+expected:
+  should_trigger: true
+graders:
+  - type: text
+    name: covers-benchmark-regressions
+    config:
+      contains:
+        - "select"
+        - "datalist"
+        - "same-origin"
+        - "template"
+        - "tool failure"
+        - "Pa11y"
+        - "QualWeb"
